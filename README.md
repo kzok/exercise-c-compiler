@@ -18,7 +18,16 @@
 ※ x86-64, Linux でしか動きません
 
 - 開発環境用の docker container の立ち上げ
-
   ```bash
   ./docker.sh
+  ```
+
+- ビルド
+  ```bash
+  make 9cc
+  ```
+
+- テスト
+  ```bash
+  make test
   ```
