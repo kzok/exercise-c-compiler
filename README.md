@@ -17,4 +17,8 @@
 
 ※ x86-64, Linux でしか動きません
 
-TODO: あとでかく
+- 開発環境用の docker container の立ち上げ
+
+  ```bash
+  ./docker.sh
+  ```
