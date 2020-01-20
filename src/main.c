@@ -28,14 +28,22 @@ struct Token {
   char *str;
 };
 
+// 入力プログラム
+char *g_user_input;
 // 現在着目しているトークン
-Token *token;
+Token *g_token;
 
 // エラーを報告するための関数
 // printf と同じ引数を取る
-void error(char *fmt, ...) {
+void error_at(char *loc, char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
+
+  int pos = loc - g_user_input;
+  fprintf(stderr, "%s\n", g_user_input);
+  // pos 個の空白を出力
+  fprintf(stderr, "%*s", pos, "");
+  fprintf(stderr, "^ ");
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
   exit(1);
@@ -44,34 +52,34 @@ void error(char *fmt, ...) {
 // 次のトークンが期待している記号のときには、トークンを一つ読み進めて真を返す。
 // それ以外の場合には偽を返す。
 bool consume(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op) {
+  if (g_token->kind != TK_RESERVED || g_token->str[0] != op) {
     return false;
   }
-  token = token->next;
+  g_token = g_token->next;
   return true;
 }
 
 // 次のトークンが期待している記号のときには、トークンを一つ読み進める。
 // それ以外の場合にはエラーを報告する。
 void expect(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op) {
-    error("'%c' ではありません", op);
+  if (g_token->kind != TK_RESERVED || g_token->str[0] != op) {
+    error_at(g_token->str, "'%c' ではありません", op);
   }
-  token = token->next;
+  g_token = g_token->next;
 }
 
 bool at_eof() {
-  return token->kind == TK_EOF;
+  return g_token->kind == TK_EOF;
 }
 
 // 次のトークンが数値の場合、トークンを一つ読み進めてその数値を返す。
 // それ以外の場合にはエラーを報告する。
 int expect_number() {
-  if (token->kind != TK_NUM) {
-    error("数ではありません");
+  if (g_token->kind != TK_NUM) {
+    error_at(g_token->str, "数ではありません");
   }
-  int val = token->val;
-  token = token->next;
+  int val = g_token->val;
+  g_token = g_token->next;
   return val;
 }
 
@@ -107,7 +115,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    error("トークナイズできません");
+    error_at(p, "トークナイズできません");
   }
 
   new_token(TK_EOF, cur, p);
@@ -120,8 +128,10 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  g_user_input = argv[1];
+
   // トークナイズする
-  token = tokenize(argv[1]);
+  g_token = tokenize(argv[1]);
 
   // アセンブリの前半部分を出力
   printf(".intel_syntax noprefix\n");
