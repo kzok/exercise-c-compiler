@@ -34,25 +34,19 @@ void error_at(char *loc, char *fmt, ...) {
 
 // トークンの種類
 typedef enum {
-  // 記号
-  TK_RESERVED,
-  // 整数トークン
-  TK_NUM,
-  // 入力の終わりを表すトークン
-  TK_EOF,
+  TK_RESERVED,  // 記号
+  TK_NUM,       // 整数トークン
+  TK_EOF,       // 入力の終わりを表すトークン
 } TokenKind;
 
 // トークン型
 typedef struct Token Token;
 struct Token {
-  // トークンの型
-  TokenKind kind;
-  // 次の入力トークン
-  Token *next;
-  // kind が TK_NUM の場合、その数値
-  int val;
-  // トークン文字列
-  char *str;
+  TokenKind kind; // トークンの型
+  Token *next;    // 次の入力トークン
+  int val;        // kind が TK_NUM の場合、その数値
+  char *str;      // トークン文字列
+  int len;        // 文字列長
 };
 
 // 現在着目しているトークン
@@ -60,8 +54,12 @@ Token *g_token = NULL;
 
 // 次のトークンが期待している記号のときには、トークンを一つ読み進めて真を返す。
 // それ以外の場合には偽を返す。
-bool consume(char op) {
-  if (g_token->kind != TK_RESERVED || g_token->str[0] != op) {
+bool consume(char *op) {
+  if (
+      g_token->kind != TK_RESERVED ||
+      g_token->len != strlen(op) ||
+      memcmp(g_token->str, op, g_token->len)
+  ) {
     return false;
   }
   g_token = g_token->next;
@@ -70,8 +68,12 @@ bool consume(char op) {
 
 // 次のトークンが期待している記号のときには、トークンを一つ読み進める。
 // それ以外の場合にはエラーを報告する。
-void expect(char op) {
-  if (g_token->kind != TK_RESERVED || g_token->str[0] != op) {
+void expect(char *op) {
+  if (
+    g_token->kind != TK_RESERVED ||
+    g_token->len != strlen(op) ||
+    memcmp(g_token->str, op, g_token->len)
+  ) {
     error_at(g_token->str, "'%c' ではありません", op);
   }
   g_token = g_token->next;
@@ -93,10 +95,11 @@ int expect_number() {
 }
 
 // 新しいトークンを作成して cur に繋げる
-Token *new_token(TokenKind kind, Token *cur, char *str) {
+Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
+  tok->len = len;
   cur->next = tok;
   return tok;
 }
@@ -113,13 +116,23 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
-      cur = new_token(TK_RESERVED, cur, p++);
+    if (strncmp(p, ">=", 2) == 0 || strncmp(p, "<=", 2) == 0) {
+      cur = new_token(TK_RESERVED, cur, p, 2);
+      p += 2;
+      continue;
+    }
+
+    if (
+      *p == '>' || *p == '<' || *p == '(' || *p == ')' ||
+      *p == '+' || *p == '-' || *p == '*' || *p == '/'
+    ) {
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p += 1;
       continue;
     }
 
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p);
+      cur = new_token(TK_NUM, cur, p, 0);
       cur->val = strtol(p, &p, 10);
       continue;
     }
@@ -127,7 +140,7 @@ Token *tokenize(char *p) {
     error_at(p, "トークナイズできません");
   }
 
-  new_token(TK_EOF, cur, p);
+  new_token(TK_EOF, cur, p, 0);
   return head.next;
 }
 
@@ -137,11 +150,17 @@ Token *tokenize(char *p) {
 
 // 抽象構文木のノードの種類
 typedef enum {
-  ND_ADD, // +
-  ND_SUB, // -
-  ND_MUL, // *
-  ND_DIV, // / 
-  ND_NUM, // 整数
+  ND_EQ,        // ==
+  ND_NE,        // !=
+  ND_GTE,       // >=
+  ND_LTE,       // <=
+  ND_GT,        // >
+  ND_LT,        // <
+  ND_ADD,       // +
+  ND_SUB,       // -
+  ND_MUL,       // *
+  ND_DIV,       // / 
+  ND_NUM,       // 整数
 } NodeKind;
 
 // 抽象構文木のノードの型
@@ -169,17 +188,56 @@ Node *new_node_num(int val) {
 }
 
 Node *expr();
+Node *equality();
+Node *relational();
+Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
 
 Node *expr() {
+  return equality();
+}
+
+Node *equality() {
+  Node *node = relational();
+
+  for (;;) {
+    if (consume("==")) {
+      node = new_node(ND_EQ, node, relational());
+    } else if (consume("!=")) {
+      node = new_node(ND_NE, node, relational());
+    } else {
+      return node;
+    }
+  }
+}
+
+Node *relational() {
+  Node *node = add();
+
+  for (;;) {
+    if (consume("<=")) {
+      node = new_node(ND_LTE, node, add());
+    } else if (consume(">=")) {
+      node = new_node(ND_GTE, node, add());
+    } else if (consume(">")) {
+      node = new_node(ND_GT, node, add());
+    } else if (consume("<")) {
+      node = new_node(ND_LT, node, add());
+    } else {
+      return node;
+    }
+  }
+}
+
+Node *add() {
   Node *node = mul();
 
   for (;;) {
-    if (consume('+')) {
+    if (consume("+")) {
       node = new_node(ND_ADD, node, mul());
-    } else if (consume('-')) {
+    } else if (consume("-")) {
       node = new_node(ND_SUB, node, mul());
     } else {
       return node;
@@ -191,9 +249,9 @@ Node *mul() {
   Node *node = unary();
 
   for (;;) {
-    if (consume('*')) {
+    if (consume("*")) {
       node = new_node(ND_MUL, node, unary());
-    } else if (consume('/')) {
+    } else if (consume("/")) {
       node = new_node(ND_DIV, node, unary());
     } else {
       return node;
@@ -202,9 +260,9 @@ Node *mul() {
 }
 
 Node *unary() {
-  if (consume('+')) {
+  if (consume("+")) {
     return primary();
-  } else if (consume('-')) {
+  } else if (consume("-")) {
     return new_node(ND_SUB, new_node_num(0), primary());
   } else {
     return primary();
@@ -213,9 +271,9 @@ Node *unary() {
 
 Node *primary() {
   // トークンが "(" ならば "(" expr ")" のはず
-  if (consume('(')) {
+  if (consume("(")) {
     Node *node = expr();
-    expect(')');
+    expect(")");
     return node;
   }
   // そうでなければ数値のはず
