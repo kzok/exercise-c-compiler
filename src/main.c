@@ -152,9 +152,7 @@ Token *tokenize(char *p) {
 typedef enum {
   ND_EQ,        // ==
   ND_NE,        // !=
-  ND_GTE,       // >=
   ND_LTE,       // <=
-  ND_GT,        // >
   ND_LT,        // <
   ND_ADD,       // +
   ND_SUB,       // -
@@ -220,11 +218,11 @@ Node *relational() {
     if (consume("<=")) {
       node = new_node(ND_LTE, node, add());
     } else if (consume(">=")) {
-      node = new_node(ND_GTE, node, add());
-    } else if (consume(">")) {
-      node = new_node(ND_GT, node, add());
+      node = new_node(ND_LTE, add(), node);
     } else if (consume("<")) {
       node = new_node(ND_LT, node, add());
+    } else if (consume(">")) {
+      node = new_node(ND_LT, add(), node);
     } else {
       return node;
     }
@@ -293,6 +291,26 @@ void gen(Node *node) {
   printf("  pop rax\n");
 
   switch(node->kind) {
+  case ND_EQ:
+    printf("  cmp rax, rdi\n");
+    printf("  sete al\n");
+    printf("  movzb rax, al\n");
+    break;
+  case ND_NE:
+    printf("  cmp rax, rdi\n");
+    printf("  setne al\n");
+    printf("  movzb rax, al\n");
+    break;
+  case ND_LTE:
+    printf("  cmp rax, rdi\n");
+    printf("  setle al\n");
+    printf("  movzb rax, al\n");
+    break;
+  case ND_LT:
+    printf("  cmp rax, rdi\n");
+    printf("  setl al\n");
+    printf("  movzb rax, al\n");
+    break;
   case ND_ADD:
     printf("  add rax, rdi\n");
     break;
