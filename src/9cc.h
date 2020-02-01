@@ -1,7 +1,8 @@
 #include <ctype.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 
 #ifndef _9CC_H_IS_INCLUDED
 #define _9CC_H_IS_INCLUDED
@@ -18,19 +19,27 @@
 
 // トークンの種類
 typedef enum {
-  TK_RESERVED,  // 記号
-  TK_NUM,       // 整数トークン
-  TK_EOF,       // 入力の終わりを表すトークン
+  // 記号
+  TK_RESERVED,
+  // 整数トークン
+  TK_NUM,
+  // 入力の終わりを表すトークン
+  TK_EOF,
 } TokenKind;
 
 // トークン型
 typedef struct Token Token;
 struct Token {
-  TokenKind kind; // トークンの型
-  Token *next;    // 次の入力トークン
-  int val;        // kind が TK_NUM の場合、その数値
-  char *str;      // トークン文字列
-  int len;        // 文字列長
+  // トークンの型
+  TokenKind kind;
+  // 次の入力トークン
+  Token *next;
+  // kind が TK_NUM の場合、その数値
+  int val;
+  // トークン文字列
+  char *str;
+  // 文字列長
+  int len;
 };
 
 /**
@@ -39,24 +48,37 @@ struct Token {
 
 // 抽象構文木のノードの種類
 typedef enum {
-  ND_EQ,        // ==
-  ND_NE,        // !=
-  ND_LTE,       // <=
-  ND_LT,        // <
-  ND_ADD,       // +
-  ND_SUB,       // -
-  ND_MUL,       // *
-  ND_DIV,       // / 
-  ND_NUM,       // 整数
+  // ==
+  ND_EQ,
+  // !=
+  ND_NE,
+  // <=
+  ND_LTE,
+  // <
+  ND_LT,
+  // +
+  ND_ADD,
+  // -
+  ND_SUB,
+  // *
+  ND_MUL,
+  // / 
+  ND_DIV,
+  // 整数
+  ND_NUM,
 } NodeKind;
 
 // 抽象構文木のノードの型
 typedef struct Node Node;
 struct Node {
-  NodeKind kind;  // ノードの型
-  Node *lhs;      // 左辺
-  Node *rhs;      // 右辺
-  int val;        // kind が ND_NUM の場合のみ使う
+  // ノードの型
+  NodeKind kind;
+  // 左辺
+  Node *lhs;
+  // 右辺
+  Node *rhs;
+  // kind が ND_NUM の場合のみ使う
+  int val;
 };
 
 /**
@@ -87,6 +109,12 @@ EXTERN inline void error_at(char *loc, char *fmt, ...) {
   fprintf(stderr, "\n");
   exit(1);
 }
+
+/**
+ * prototype of tokenizer.c
+ */
+
+Token *tokenize(char *p);
 
 /**
  * prototype of parser.c
