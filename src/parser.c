@@ -11,7 +11,7 @@ static void expect(char *op) {
     g_token->len != strlen(op) ||
     memcmp(g_token->str, op, g_token->len)
   ) {
-    error_at(g_token->str, "'%c' ではありません", op);
+    error_at(g_token->str, "'%s' ではありません", op);
   }
   g_token = g_token->next;
 }
@@ -34,9 +34,20 @@ static bool consume(char *op) {
   return true;
 }
 
+// 次のトークンが識別子だったときには、トークンを一つ読み進めて現在のトークンを返す
+// そうでなければ NULL ポインタを返す
+static Token *consume_ident() {
+  if (g_token->kind != TK_IDENT) {
+    return NULL;
+  }
+  Token *current = g_token;
+  g_token = g_token->next;
+  return current;
+}
+
 // 次のトークンが数値の場合、トークンを一つ読み進めてその数値を返す。
 // それ以外の場合にはエラーを報告する。
-int expect_number() {
+static int expect_number() {
   if (g_token->kind != TK_NUM) {
     error_at(g_token->str, "数ではありません");
   }
@@ -61,8 +72,10 @@ static Node *new_node_num(int val) {
 }
 
 /**
- * 構文解析
+ * Syntax rules
  */
+
+static Node *expr();
 
 static Node *primary() {
   // トークンが "(" ならば "(" expr ")" のはず
@@ -71,7 +84,14 @@ static Node *primary() {
     expect(")");
     return node;
   }
-  // そうでなければ数値のはず
+  Token *token = consume_ident();
+  if (token) {
+    Node *node = calloc(1, sizeof(Node));
+    node->kind = ND_LVAR;
+    node->offset = (token->str[0] - 'a' + 1) * 8;
+    return node;
+  }
+  // そうでなければ数値または識別子のはず
   return new_node_num(expect_number());
 }
 
@@ -145,6 +165,33 @@ static Node *equality() {
   }
 }
 
-Node *expr() {
-  return equality();
+static Node *assign() {
+  Node *node = equality();
+
+  for (;;) {
+    if (consume("=")) {
+      node = new_node(ND_ASSIGN, node, assign());
+    } else {
+      return node;
+    }
+  }
+}
+
+static Node *expr() {
+  return assign();
+}
+
+static Node *stmt() {
+  Node *node = expr();
+  expect(";");
+  return node;
+}
+
+void program() {
+  int i = 0;
+  while (!at_eof()) {
+    g_code[i] = stmt();
+    i += 1;
+  }
+  g_code[i] = NULL;
 }

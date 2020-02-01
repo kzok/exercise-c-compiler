@@ -15,19 +15,32 @@ int main(int argc, char **argv) {
   // トークナイズしてパースする
   g_user_input = argv[1];
   g_token = tokenize(g_user_input);
-  Node *node = expr();
+  program();
 
   // アセンブリの前半部分を出力
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("main:\n");
 
-  // 抽象構文木を下りながらコード生成
-  gen(node);
+  // プロローグ
+  // 変数 26 個分の領域を確保する
+  printf("  push rbp\n");
+  printf("  mov rbp, rsp\n");
+  printf("  sub rsp, %d\n", 8 * 26);
 
-  // スタックトップに式全体の値が残っているはずなので
-  // それを rax にロードして関数からの戻り値とする
-  printf("  pop rax\n");
+  // 先頭の式から順にコード生成
+  for (int i = 0; g_code[i]; i++) {
+    gen(g_code[i]);
+
+    // 式の評価結果としてスタックに一つの値が残っている
+    // はずなので、スタックが溢れないようにポップしておく
+    printf("  pop rax\n");
+  }
+
+  // エピローグ
+  // 最後の式の結果が rax に残っているのでそれが戻り値になる
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
   printf("  ret\n");
   return 0;
 }

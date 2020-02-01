@@ -30,9 +30,16 @@ Token *tokenize(char *p) {
 
     if (
       *p == '>' || *p == '<' || *p == '(' || *p == ')' ||
-      *p == '+' || *p == '-' || *p == '*' || *p == '/'
+      *p == '+' || *p == '-' || *p == '*' || *p == '/' ||
+      *p == ';' || *p == '='
     ) {
       cur = new_token(TK_RESERVED, cur, p, 1);
+      p += 1;
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p, 1);
       p += 1;
       continue;
     }

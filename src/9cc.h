@@ -21,6 +21,8 @@
 typedef enum {
   // 記号
   TK_RESERVED,
+  // 識別子
+  TK_IDENT,
   // 整数トークン
   TK_NUM,
   // 入力の終わりを表すトークン
@@ -64,6 +66,10 @@ typedef enum {
   ND_MUL,
   // / 
   ND_DIV,
+  // 代入
+  ND_ASSIGN,
+  // ローカル変数
+  ND_LVAR,
   // 整数
   ND_NUM,
 } NodeKind;
@@ -79,6 +85,8 @@ struct Node {
   Node *rhs;
   // kind が ND_NUM の場合のみ使う
   int val;
+  // kind が ND_LVAR の場合のみ使う
+  int offset;
 };
 
 /**
@@ -89,6 +97,8 @@ struct Node {
 EXTERN Token *g_token;
 // 入力プログラム
 EXTERN char *g_user_input;
+// 生成された構文木
+EXTERN Node *g_code[100];
 
 /**
  * インライン関数
@@ -120,7 +130,7 @@ Token *tokenize(char *p);
  * prototype of parser.c
  */
 
-Node *expr();
+void program();
 
 /**
  * prototype of codegen.c
