@@ -1,12 +1,17 @@
-CFLAGS=-std=c11 -g -static
+CFLAGS=-std=c11 -g -static -Wall
+TARGET=9cc
+SRCS=$(wildcard src/*.c)
+OBJS=$(SRCS:.c=.o)
 
-9cc: src/main.c
-	gcc -o 9cc src/main.c
+9cc: $(OBJS)
+	gcc -o $(TARGET) $(OBJS) $(LDFLAGS)
 
-test: 9cc
+$(OBJS): src/9cc.h
+
+test: $(TARGET)
 	./test.sh
 
 clean:
-	rm -f 9cc *.o *~ tmp*
+	rm -f $(TARGET) $(OBJS) *~ tmp*
 
 .PHONY: test clean
