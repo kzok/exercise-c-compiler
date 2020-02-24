@@ -39,6 +39,33 @@ static bool tokenize_if_reserved(
   return false;
 }
 
+/**
+ * @param p [IN/OUT] トークナイズ対象の文字列の先頭ポインタ
+ * @param cur [IN/OUT] トークンカーソルの先頭ポインタ
+ * @return 識別子としてトークナイズされたかどうか
+ */
+static bool tokenize_if_ident(
+  char **p,
+  Token **cur
+) {
+  char *head = *p;
+  size_t len = 0;
+  while (**p) {
+    if ('a' <= **p && **p <= 'z') {
+      len += 1;
+      *p += 1;
+    } else {
+      break;
+    }
+  }
+  if (len <= 0) {
+    return false;
+  }
+
+  *cur = new_token(TK_IDENT, *cur, head, len);
+  return true;
+}
+
 Token *tokenize(char *p) {
   Token head;
   head.next = NULL;
@@ -55,15 +82,13 @@ Token *tokenize(char *p) {
       continue;
     } 
 
-    if ('a' <= *p && *p <= 'z') {
-      cur = new_token(TK_IDENT, cur, p, 1);
-      p += 1;
-      continue;
-    }
-
     if (isdigit(*p)) {
       cur = new_token(TK_NUM, cur, p, 0);
       cur->val = strtol(p, &p, 10);
+      continue;
+    }
+
+    if (tokenize_if_ident(&p, &cur)) {
       continue;
     }
 

@@ -90,6 +90,21 @@ struct Node {
 };
 
 /**
+ * ローカル変数の型
+ */
+typedef struct LVar LVar;
+struct LVar {
+  // 次の変数か NULL
+  LVar *next;
+  // 変数の名前
+  char *name;
+  // 名前の長さ
+  int len;
+  // RBP からのオフセット
+  int offset;
+};
+
+/**
  * グローバル変数
  */
 
@@ -99,6 +114,8 @@ EXTERN Token *g_token;
 EXTERN char *g_user_input;
 // 生成された構文木
 EXTERN Node *g_code[100];
+// ローカル変数
+EXTERN LVar *g_locals;
 
 /**
  * インライン関数

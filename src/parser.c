@@ -71,6 +71,16 @@ static Node *new_node_num(int val) {
   return node;
 }
 
+// 変数を名前で検索する。見つからなかった場合は NULL を返す。
+static LVar *find_lvar(Token *tok) {
+  for (LVar *var = g_locals; var; var = var->next) {
+    if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+      return var;
+    }
+  }
+  return NULL;
+}
+
 /**
  * Syntax rules
  */
@@ -88,7 +98,20 @@ static Node *primary() {
   if (token) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
-    node->offset = (token->str[0] - 'a' + 1) * 8;
+
+    LVar *lvar = find_lvar(token);
+    if (lvar) {
+      node->offset = lvar->offset;
+    } else {
+      lvar = calloc(1, sizeof(LVar));
+      lvar->next = g_locals;
+      lvar->name = token->str;
+      lvar->len = token->len;
+      // 今は int 型しかないので 8 バイト固定
+      lvar->offset = g_locals == NULL ? 0 : g_locals->offset + 8;
+      node->offset = lvar->offset;
+      g_locals = lvar;
+    }
     return node;
   }
   // そうでなければ数値または識別子のはず

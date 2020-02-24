@@ -31,5 +31,6 @@ try 0 "2 < 2;"
 try 1 "2 <= 2;"
 try 0 "2 <= 1;"
 try 3 "a = 1; b = a + 2; b;"
+try 6 "foo = 1; bar = 2 + 3; foo + bar;"
 
 echo OK
