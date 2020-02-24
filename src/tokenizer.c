@@ -1,5 +1,14 @@
 #include "9cc.h"
 
+#include "stdbool.h"
+
+static const char *const RESERVED[] = {
+  ">=", "<=",
+  ">", "<", "(", ")",
+  "+", "-", "*", "/",
+  ";", "="
+};
+
 // 新しいトークンを作成して cur に繋げる
 static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   Token *tok = calloc(1, sizeof(Token));
@@ -8,6 +17,26 @@ static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   tok->len = len;
   cur->next = tok;
   return tok;
+}
+
+/**
+ * @param p [IN/OUT] トークナイズ対象の文字列の先頭ポインタ
+ * @param cur [IN/OUT] トークンカーソルの先頭ポインタ
+ * @return 予約語としてトークナイズされたかどうか
+ */
+static bool tokenize_if_reserved(
+  char **p,
+  Token **cur
+) {
+  for (size_t i = 0; i < sizeof(RESERVED) / sizeof(RESERVED[0]); ++i) {
+    const size_t len = strlen(RESERVED[i]);
+    if (strncmp(*p, RESERVED[i], len) == 0) {
+      *cur = new_token(TK_RESERVED, *cur, *p, len);
+      *p += len;
+      return true;
+    }
+  }
+  return false;
 }
 
 Token *tokenize(char *p) {
@@ -22,21 +51,9 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (strncmp(p, ">=", 2) == 0 || strncmp(p, "<=", 2) == 0) {
-      cur = new_token(TK_RESERVED, cur, p, 2);
-      p += 2;
+    if (tokenize_if_reserved(&p, &cur)) {
       continue;
-    }
-
-    if (
-      *p == '>' || *p == '<' || *p == '(' || *p == ')' ||
-      *p == '+' || *p == '-' || *p == '*' || *p == '/' ||
-      *p == ';' || *p == '='
-    ) {
-      cur = new_token(TK_RESERVED, cur, p, 1);
-      p += 1;
-      continue;
-    }
+    } 
 
     if ('a' <= *p && *p <= 'z') {
       cur = new_token(TK_IDENT, cur, p, 1);
