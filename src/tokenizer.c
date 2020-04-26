@@ -9,6 +9,13 @@ static const char *const RESERVED[] = {
   ";", "="
 };
 
+static bool is_alnum(char c) {
+  return
+    ('a' <= c && c <= 'z') ||
+    ('A' <= c && c <= 'Z') ||
+    (c == '_');
+}
+
 // 新しいトークンを作成して cur に繋げる
 static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   Token *tok = calloc(1, sizeof(Token));
@@ -16,6 +23,7 @@ static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   tok->str = str;
   tok->len = len;
   cur->next = tok;
+  DEBUGF("[debug] tokenize \"%.*s\" as kind:%d.\n", len, str, kind);
   return tok;
 }
 
@@ -24,15 +32,15 @@ static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
  * @param cur [IN/OUT] トークンカーソルの先頭ポインタ
  * @return 予約語としてトークナイズされたかどうか
  */
-static bool tokenize_if_reserved(
-  char **p,
+static bool tokenize_as_reserved(
+  char **pp,
   Token **cur
 ) {
   for (size_t i = 0; i < sizeof(RESERVED) / sizeof(RESERVED[0]); ++i) {
     const size_t len = strlen(RESERVED[i]);
-    if (strncmp(*p, RESERVED[i], len) == 0) {
-      *cur = new_token(TK_RESERVED, *cur, *p, len);
-      *p += len;
+    if (strncmp(*pp, RESERVED[i], len) == 0) {
+      *cur = new_token(TK_RESERVED, *cur, *pp, len);
+      *pp += len;
       return true;
     }
   }
@@ -44,16 +52,16 @@ static bool tokenize_if_reserved(
  * @param cur [IN/OUT] トークンカーソルの先頭ポインタ
  * @return 識別子としてトークナイズされたかどうか
  */
-static bool tokenize_if_ident(
-  char **p,
+static bool tokenize_as_ident(
+  char **pp,
   Token **cur
 ) {
-  char *head = *p;
+  char *str = *pp;
   size_t len = 0;
-  while (**p) {
-    if ('a' <= **p && **p <= 'z') {
+  while (**pp) {
+    if (is_alnum(**pp)) {
       len += 1;
-      *p += 1;
+      *pp += 1;
     } else {
       break;
     }
@@ -62,7 +70,7 @@ static bool tokenize_if_ident(
     return false;
   }
 
-  *cur = new_token(TK_IDENT, *cur, head, len);
+  *cur = new_token(TK_IDENT, *cur, str, len);
   return true;
 }
 
@@ -77,21 +85,29 @@ Token *tokenize(char *p) {
       p++;
       continue;
     }
-
-    if (tokenize_if_reserved(&p, &cur)) {
+    // リターン文
+    if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
+      cur = new_token(TK_RETURN, cur, p, 6);
+      p += 6;
+      continue;
+    }
+    // 予約語
+    if (tokenize_as_reserved(&p, &cur)) {
       continue;
     } 
-
+    // 数値
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p, 0);
-      cur->val = strtol(p, &p, 10);
+      char* head = p;
+      int val = strtol(p, &p, 10);
+      cur = new_token(TK_NUM, cur, head, p - head);
+      cur->val = val;
       continue;
     }
-
-    if (tokenize_if_ident(&p, &cur)) {
+    // 識別子
+    if (tokenize_as_ident(&p, &cur)) {
       continue;
     }
-
+    // 上記以外
     error_at(p, "トークナイズできません");
   }
 

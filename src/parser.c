@@ -34,10 +34,11 @@ static bool consume(char *op) {
   return true;
 }
 
-// 次のトークンが識別子だったときには、トークンを一つ読み進めて現在のトークンを返す
+// 次のトークンが期待した種類のものだったときには、
+// トークンを一つ読み進めて現在のトークンを返す
 // そうでなければ NULL ポインタを返す
-static Token *consume_ident() {
-  if (g_token->kind != TK_IDENT) {
+static Token *consume_token_kind(TokenKind kind) {
+  if (g_token->kind != kind) {
     return NULL;
   }
   Token *current = g_token;
@@ -94,7 +95,7 @@ static Node *primary() {
     expect(")");
     return node;
   }
-  Token *token = consume_ident();
+  Token *token = consume_token_kind(TK_IDENT);
   if (token) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
@@ -205,7 +206,13 @@ static Node *expr() {
 }
 
 static Node *stmt() {
-  Node *node = expr();
+  Node *node;
+  Token *token = consume_token_kind(TK_RETURN);
+  if (token) {
+    node = new_node(ND_RETURN, expr(), NULL);
+  } else {
+    node = expr();
+  }
   expect(";");
   return node;
 }

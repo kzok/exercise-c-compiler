@@ -13,6 +13,12 @@
 #  define EXTERN
 #endif
 
+#ifdef DEBUG
+# define DEBUGF(...) do {fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
+#else
+# define DEBUGF(fmt, ...)
+#endif
+
 /**
  * 字句解析
  */
@@ -27,6 +33,8 @@ typedef enum {
   TK_NUM,
   // 入力の終わりを表すトークン
   TK_EOF,
+  // リターン文
+  TK_RETURN,
 } TokenKind;
 
 // トークン型
@@ -72,6 +80,8 @@ typedef enum {
   ND_LVAR,
   // 整数
   ND_NUM,
+  // リターン文
+  ND_RETURN,
 } NodeKind;
 
 // 抽象構文木のノードの型
