@@ -23,10 +23,12 @@ int main(int argc, char **argv) {
   printf("main:\n");
 
   // プロローグ
-  // 変数 26 個分の領域を確保する
+  // 変数分の領域を確保する
+  const int localsSize = g_locals == NULL ? 0 : g_locals->offset + 8;
+  DEBUGF("[debug] local size: %d bytes\n", localsSize);
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", 8 * 26);
+  printf("  sub rsp, %d\n", localsSize);
 
   // 先頭の式から順にコード生成
   for (int i = 0; g_code[i]; i++) {
