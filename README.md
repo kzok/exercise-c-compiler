@@ -32,7 +32,9 @@
 
 ```
 program    = stmt*
-stmt       = expr ";" | "return" expr ";"
+stmt       = expr ";"
+           | "if" "(" expr ")" stmt ("else" stmt)?
+           | "return" expr ";"
 expr       = assign
 assign     = equality ("=" assign)?
 equality   = relational ("==" relational | "!=" relational)*
@@ -42,3 +44,17 @@ mul        = unary ("*" unary | "/" unary)*
 unary      = ("+" | "-")? primary
 primary    = num | ident | "(" expr ")"
 ```
+
+## TODO
+
+- return のトークナイザを関数化
+- if 文の追加
+  - if のトークンを追加
+  - if のパーサを追加
+- else 句の追加
+
+- 大規模リファクタリング？
+  - グローバル変数無くす
+  - ユニットテスト書く
+
+- 開発環境を vscode dev container に移す
