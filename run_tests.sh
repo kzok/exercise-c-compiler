@@ -1,13 +1,25 @@
 #!/bin/bash
+set -eu
+
+cd $(dirname $0)
+./run_build.sh
+
+#
+# End to end tests
+#
+
+cd ./build
 
 try() {
 	expected="$1"
 	input="$2"
 
-	./9cc "$input" > tmp.s
+	set +e
+	./pcc "$input" > tmp.s
 	gcc -o tmp tmp.s
 	./tmp
 	actual="$?"
+	set -e
 
 	if [ "$actual" = "$expected" ]; then
 		echo "$input => $actual"

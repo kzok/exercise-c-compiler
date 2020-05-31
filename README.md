@@ -12,20 +12,16 @@
 ## 使い方
 
 ※ Linux/x86-64 で動かして下さい
-
-- 開発環境用の docker container の立ち上げ
-  ```bash
-  ./docker.sh
-  ```
+※ vscode を使う場合は拡張機能 "Remote - Containers" で開発環境を整えられます
 
 - ビルド
   ```bash
-  make
+  ./run_build.sh
   ```
 
 - テスト
   ```bash
-  make test
+  ./run_tests.sh
   ```
 
 ## 現時点での文法
@@ -52,9 +48,3 @@ primary    = num | ident | "(" expr ")"
   - if のトークンを追加
   - if のパーサを追加
 - else 句の追加
-
-- 大規模リファクタリング？
-  - グローバル変数無くす
-  - ユニットテスト書く
-
-- 開発環境を vscode dev container に移す
