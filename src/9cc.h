@@ -133,7 +133,7 @@ EXTERN LVar *g_locals;
 
 // エラーを報告するための関数
 // printf と同じ引数を取る
-EXTERN inline void error_at(char *loc, char *fmt, ...) {
+EXTERN inline void error_at(const char* const loc, const char* const fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
 
@@ -151,7 +151,7 @@ EXTERN inline void error_at(char *loc, char *fmt, ...) {
  * prototype of tokenizer.c
  */
 
-Token *tokenize(char *p);
+Token *tokenize(char* p);
 
 /**
  * prototype of parser.c

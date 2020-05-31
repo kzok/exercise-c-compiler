@@ -17,7 +17,12 @@ static bool is_alnum(char c) {
 }
 
 // 新しいトークンを作成して cur に繋げる
-static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
+static Token *new_token(
+  TokenKind kind,
+  Token* cur,
+  char* str,
+  const int len
+) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
@@ -30,11 +35,11 @@ static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 /**
  * @param p [IN/OUT] トークナイズ対象の文字列の先頭ポインタ
  * @param cur [IN/OUT] トークンカーソルの先頭ポインタ
- * @return 予約語としてトークナイズされたかどうか
+ * @return 記号としてトークナイズされたかどうか
  */
 static bool consume_as_sign(
-  char **pp,
-  Token **cur
+  char** pp,
+  Token** cur
 ) {
   for (size_t i = 0; i < sizeof(SIGNES) / sizeof(SIGNES[0]); ++i) {
     const size_t len = strlen(SIGNES[i]);
@@ -53,8 +58,8 @@ static bool consume_as_sign(
  * @return 識別子としてトークナイズされたかどうか
  */
 static bool consume_as_ident(
-  char **pp,
-  Token **cur
+  char** pp,
+  Token** cur
 ) {
   char *str = *pp;
   size_t len = 0;
@@ -74,9 +79,29 @@ static bool consume_as_ident(
   return true;
 }
 
+/**
+ * @param p [IN/OUT] トークナイズ対象の文字列の先頭ポインタ
+ * @param cur [IN/OUT] トークンカーソルの先頭ポインタ
+ * @param str [IN] 同じかどうか判定する単語
+ * @param kind [IN] トークナイズする際のトークン種別
+ * @return 予約語としてトークナイズされたかどうか
+ */
+static bool consume_as_reserved(
+  char** pp,
+  Token** cur,
+  const char* str,
+  const TokenKind kind
+) {
+  const size_t len = strlen(str);
+  if (strncmp(*pp, str, len) == 0 && !is_alnum((*pp)[len])) {
+    *cur = new_token(TK_RETURN, *cur, *pp, len);
+    *pp += len;
+    return true;
+  }
+  return false;
+}
 
-
-Token *tokenize(char *p) {
+Token *tokenize(char* p) {
   Token head;
   head.next = NULL;
   Token *cur = &head;
@@ -88,9 +113,7 @@ Token *tokenize(char *p) {
       continue;
     }
     // リターン文
-    if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
-      cur = new_token(TK_RETURN, cur, p, 6);
-      p += 6;
+    if (consume_as_reserved(&p, &cur, "return", TK_RETURN)) {
       continue;
     }
     // 予約語
