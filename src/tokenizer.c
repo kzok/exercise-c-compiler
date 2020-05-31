@@ -2,7 +2,7 @@
 
 #include "stdbool.h"
 
-static const char *const RESERVED[] = {
+static const char *const SIGNES[] = {
   ">=", "<=",
   ">", "<", "(", ")",
   "+", "-", "*", "/",
@@ -32,14 +32,14 @@ static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
  * @param cur [IN/OUT] トークンカーソルの先頭ポインタ
  * @return 予約語としてトークナイズされたかどうか
  */
-static bool tokenize_as_reserved(
+static bool consume_as_sign(
   char **pp,
   Token **cur
 ) {
-  for (size_t i = 0; i < sizeof(RESERVED) / sizeof(RESERVED[0]); ++i) {
-    const size_t len = strlen(RESERVED[i]);
-    if (strncmp(*pp, RESERVED[i], len) == 0) {
-      *cur = new_token(TK_RESERVED, *cur, *pp, len);
+  for (size_t i = 0; i < sizeof(SIGNES) / sizeof(SIGNES[0]); ++i) {
+    const size_t len = strlen(SIGNES[i]);
+    if (strncmp(*pp, SIGNES[i], len) == 0) {
+      *cur = new_token(TK_SIGN, *cur, *pp, len);
       *pp += len;
       return true;
     }
@@ -52,7 +52,7 @@ static bool tokenize_as_reserved(
  * @param cur [IN/OUT] トークンカーソルの先頭ポインタ
  * @return 識別子としてトークナイズされたかどうか
  */
-static bool tokenize_as_ident(
+static bool consume_as_ident(
   char **pp,
   Token **cur
 ) {
@@ -74,6 +74,8 @@ static bool tokenize_as_ident(
   return true;
 }
 
+
+
 Token *tokenize(char *p) {
   Token head;
   head.next = NULL;
@@ -92,7 +94,7 @@ Token *tokenize(char *p) {
       continue;
     }
     // 予約語
-    if (tokenize_as_reserved(&p, &cur)) {
+    if (consume_as_sign(&p, &cur)) {
       continue;
     } 
     // 数値
@@ -104,7 +106,7 @@ Token *tokenize(char *p) {
       continue;
     }
     // 識別子
-    if (tokenize_as_ident(&p, &cur)) {
+    if (consume_as_ident(&p, &cur)) {
       continue;
     }
     // 上記以外

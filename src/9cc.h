@@ -26,7 +26,7 @@
 // トークンの種類
 typedef enum {
   // 記号
-  TK_RESERVED,
+  TK_SIGN,
   // 識別子
   TK_IDENT,
   // 整数トークン
