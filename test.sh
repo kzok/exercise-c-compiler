@@ -2,13 +2,13 @@
 set -eu
 
 cd $(dirname $0)
-./run_build.sh
+./build.sh
 
 #
 # End to end tests
 #
 
-cd ./build
+cd ./out
 
 try() {
 	expected="$1"

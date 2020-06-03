@@ -16,13 +16,17 @@
 
 - ビルド
   ```bash
-  ./run_build.sh
+  ./build.sh
   ```
+
+  - `./out/pcc` にファイルが出来上がります
 
 - テスト
   ```bash
-  ./run_tests.sh
+  ./test.sh
   ```
+
+  - テストを実行します
 
 ## 現時点での文法
 

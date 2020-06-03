@@ -7,4 +7,4 @@ jobs:
     steps:
       - checkout
       - run: apt update -y && apt install -y git cmake lcov
-      - run: ./run_tests.sh
+      - run: ./test.sh
