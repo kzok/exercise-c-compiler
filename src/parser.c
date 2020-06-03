@@ -6,10 +6,12 @@
 // 次のトークンが期待している記号のときには、トークンを一つ読み進める。
 // それ以外の場合にはエラーを報告する。
 static void expect(char *op) {
+  assert(op != NULL);
+
   if (
-    g_token->kind != TK_SIGN ||
-    g_token->len != strlen(op) ||
-    memcmp(g_token->str, op, g_token->len)
+    g_token->kind != TK_SIGN
+    || g_token->len != strlen(op)
+    || memcmp(g_token->str, op, g_token->len)
   ) {
     error_at(g_token->str, "'%s' ではありません", op);
   }
@@ -17,12 +19,15 @@ static void expect(char *op) {
 }
 
 static bool at_eof() {
+  assert(g_token != NULL);
   return g_token->kind == TK_EOF;
 }
 
 // 次のトークンが期待している記号のときには、トークンを一つ読み進めて真を返す。
 // それ以外の場合には偽を返す。
 static bool consume_as_sign(char *op) {
+  assert(op != NULL);
+
   if (
       g_token->kind != TK_SIGN ||
       g_token->len != strlen(op) ||
@@ -38,6 +43,8 @@ static bool consume_as_sign(char *op) {
 // トークンを一つ読み進めて現在のトークンを返す
 // そうでなければ NULL ポインタを返す
 static Token *consume_token_kind(TokenKind kind) {
+  assert(g_token != NULL);
+
   if (g_token->kind != kind) {
     return NULL;
   }
@@ -49,6 +56,8 @@ static Token *consume_token_kind(TokenKind kind) {
 // 次のトークンが数値の場合、トークンを一つ読み進めてその数値を返す。
 // それ以外の場合にはエラーを報告する。
 static int expect_number() {
+  assert(g_token != NULL);
+
   if (g_token->kind != TK_NUM) {
     error_at(g_token->str, "数ではありません");
   }
@@ -74,6 +83,8 @@ static Node *new_node_num(int val) {
 
 // 変数を名前で検索する。見つからなかった場合は NULL を返す。
 static LVar *find_lvar(Token *tok) {
+  assert(tok != NULL);
+
   for (LVar *var = g_locals; var; var = var->next) {
     if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
       return var;

@@ -23,6 +23,9 @@ static Token *new_token(
   char* str,
   const int len
 ) {
+  assert(cur != NULL);
+  assert(str != NULL);
+
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
@@ -41,6 +44,11 @@ static bool consume_as_sign(
   char** pp,
   Token** cur
 ) {
+  assert(pp != NULL);
+  assert(*pp != NULL);
+  assert(cur != NULL);
+  assert(*cur != NULL);
+
   for (size_t i = 0; i < sizeof(SIGNES) / sizeof(SIGNES[0]); ++i) {
     const size_t len = strlen(SIGNES[i]);
     if (strncmp(*pp, SIGNES[i], len) == 0) {
@@ -61,6 +69,11 @@ static bool consume_as_ident(
   char** pp,
   Token** cur
 ) {
+  assert(pp != NULL);
+  assert(*pp != NULL);
+  assert(cur != NULL);
+  assert(*cur != NULL);
+
   char *str = *pp;
   size_t len = 0;
   while (**pp) {
@@ -92,6 +105,12 @@ static bool consume_as_reserved(
   const char* str,
   const TokenKind kind
 ) {
+  assert(pp != NULL);
+  assert(*pp != NULL);
+  assert(cur != NULL);
+  assert(*cur != NULL);
+  assert(str != NULL);
+
   const size_t len = strlen(str);
   if (strncmp(*pp, str, len) == 0 && !is_alnum((*pp)[len])) {
     *cur = new_token(TK_RETURN, *cur, *pp, len);
@@ -102,6 +121,8 @@ static bool consume_as_reserved(
 }
 
 Token *tokenize(char* p) {
+  assert(p != NULL);
+
   Token head;
   head.next = NULL;
   Token *cur = &head;

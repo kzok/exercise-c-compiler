@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <assert.h>
 
 #ifndef _9CC_H_IS_INCLUDED
 #define _9CC_H_IS_INCLUDED
@@ -134,6 +135,9 @@ EXTERN LVar *g_locals;
 // エラーを報告するための関数
 // printf と同じ引数を取る
 EXTERN inline void error_at(const char* const loc, const char* const fmt, ...) {
+  assert(loc != NULL);
+  assert(fmt != NULL);
+
   va_list ap;
   va_start(ap, fmt);
 
