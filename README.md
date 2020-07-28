@@ -1,6 +1,6 @@
 # C コンパイラ演習
 
-[![CircleCI](https://circleci.com/gh/kzok/practice-c-compiler.svg?style=shield)](https://circleci.com/gh/kzok/practice-c-compiler)
+[![CircleCI](https://circleci.com/gh/kzok/exercise-c-compiler.svg?style=shield)](https://circleci.com/gh/kzok/exercise-c-compiler)
 
 [低レイヤを知りたい人のためのCコンパイラ作成入門](https://www.sigbus.info/compilerbook)の演習用リポジトリ
 
