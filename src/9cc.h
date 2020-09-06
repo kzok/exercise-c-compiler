@@ -14,7 +14,7 @@
 #  define EXTERN
 #endif
 
-#ifdef DEBUG
+#ifndef NDEBUG
 # define DEBUGF(...) do {fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
 #else
 # define DEBUGF(fmt, ...)
@@ -36,6 +36,8 @@ typedef enum {
   TK_EOF,
   // リターン文
   TK_RETURN,
+  // IF
+  TK_IF,
 } TokenKind;
 
 // トークン型
@@ -155,7 +157,7 @@ EXTERN inline void error_at(const char* const loc, const char* const fmt, ...) {
  * prototype of tokenizer.c
  */
 
-Token *tokenize(char* p);
+Token *tokenize(const char* p);
 
 /**
  * prototype of parser.c
