@@ -5,7 +5,7 @@ cd $(dirname $0)
 ./build.sh
 
 #
-# End to end tests
+# End-to-end tests
 #
 
 cd ./out
