@@ -33,7 +33,6 @@
 ```
 program    = stmt*
 stmt       = expr ";"
-           | "if" "(" expr ")" stmt ("else" stmt)?
            | "return" expr ";"
 expr       = assign
 assign     = equality ("=" assign)?
@@ -47,7 +46,6 @@ primary    = num | ident | "(" expr ")"
 
 ## TODO
 
-- return のトークナイザを関数化
 - if 文の追加
   - if のトークンを追加
   - if のパーサを追加
