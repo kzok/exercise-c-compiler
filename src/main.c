@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
   // プロローグ
   // 変数分の領域を確保する
   const int localsSize = g_locals == NULL ? 0 : g_locals->offset + 8;
-  DEBUGF("[debug] local size: %d bytes\n", localsSize);
+  DEBUGF("[debug] total size of local variables: %d bytes\n", localsSize);
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, %d\n", localsSize);

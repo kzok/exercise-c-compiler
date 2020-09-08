@@ -25,19 +25,18 @@
  */
 
 // トークンの種類
+#define TOKEN_KIND_MAP(XX) \
+  XX(TK_SIGN) /** 記号 */ \
+  XX(TK_IDENT) /** 識別子 */ \
+  XX(TK_NUM) /** 整数トークン */ \
+  XX(TK_EOF) /** 入力の終わりを表すトークン */ \
+  XX(TK_RETURN) /** リターン文 */ \
+  XX(TK_IF) /** IF */ \
+
 typedef enum {
-  // 記号
-  TK_SIGN,
-  // 識別子
-  TK_IDENT,
-  // 整数トークン
-  TK_NUM,
-  // 入力の終わりを表すトークン
-  TK_EOF,
-  // リターン文
-  TK_RETURN,
-  // IF
-  TK_IF,
+#define XX(name) name,
+  TOKEN_KIND_MAP(XX)
+#undef XX
 } TokenKind;
 
 // トークン型
@@ -59,32 +58,25 @@ struct Token {
  * 構文解析
  */
 
+#define NODE_KIND_MAP(XX) \
+  XX(ND_EQ) /** == */ \
+  XX(ND_NE) /** != */ \
+  XX(ND_LTE) /** <= */ \
+  XX(ND_LT) /** < */ \
+  XX(ND_ADD) /** + */ \
+  XX(ND_SUB) /** - */ \
+  XX(ND_MUL) /** * */ \
+  XX(ND_DIV) /** / */ \
+  XX(ND_ASSIGN) /** 代入 */ \
+  XX(ND_LVAR) /** ローカル変数 */ \
+  XX(ND_NUM) /** 整数 */ \
+  XX(ND_RETURN) /** リターン文 */ \
+
 // 抽象構文木のノードの種類
 typedef enum {
-  // ==
-  ND_EQ,
-  // !=
-  ND_NE,
-  // <=
-  ND_LTE,
-  // <
-  ND_LT,
-  // +
-  ND_ADD,
-  // -
-  ND_SUB,
-  // *
-  ND_MUL,
-  // / 
-  ND_DIV,
-  // 代入
-  ND_ASSIGN,
-  // ローカル変数
-  ND_LVAR,
-  // 整数
-  ND_NUM,
-  // リターン文
-  ND_RETURN,
+#define XX(name) name,
+  NODE_KIND_MAP(XX)
+#undef XX
 } NodeKind;
 
 // 抽象構文木のノードの型

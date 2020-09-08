@@ -24,6 +24,15 @@ static bool is_alnum(char c) {
     (c == '_');
 }
 
+static const char* token_kind_str(TokenKind kind) {
+  switch (kind) {
+#define XX(name) case name: return #name;
+    TOKEN_KIND_MAP(XX)
+#undef XX
+    default: return "<unknown>";
+  }
+}
+
 // 新しいトークンを作成して cur に繋げる
 static Token *new_token(
   TokenKind kind,
@@ -39,7 +48,8 @@ static Token *new_token(
   tok->str = str;
   tok->len = len;
   cur->next = tok;
-  DEBUGF("[debug] tokenize \"%.*s\" as kind:%d.\n", len, str, kind);
+
+  DEBUGF("[debug] tokenize \"%.*s\" as %s.\n", len, str, token_kind_str(kind));
   return tok;
 }
 
