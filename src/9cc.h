@@ -157,7 +157,7 @@ EXTERN inline void error_at(const char* const loc, const char* const fmt, ...) {
  * prototype of tokenizer.c
  */
 
-Token *tokenize(const char* p);
+Token *tokenize(char* p);
 
 /**
  * prototype of parser.c

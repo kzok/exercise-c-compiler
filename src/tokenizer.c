@@ -96,13 +96,30 @@ static bool consume_as_ident(
 
 /**
  * @param ctx [IN/OUT] トークナイズ状況
+ * @return 数値としてトークナイズされたかどうか
+ */
+static bool consume_as_digit(
+  TokenizerContext *ctx
+) {
+  if (!isdigit(*ctx->p)) {
+    return false;
+  }
+  char* head = ctx->p;
+  int val = strtol(ctx->p, &ctx->p, 10);
+  ctx->cur = new_token(TK_NUM, ctx->cur, head, ctx->p - head);
+  ctx->cur->val = val;
+  return true;
+}
+
+/**
+ * @param ctx [IN/OUT] トークナイズ状況
  * @param str [IN] 同じかどうか判定する単語
  * @param kind [IN] トークナイズする際のトークン種別
  * @return 予約語としてトークナイズされたかどうか
  */
 static bool consume_as_reserved(
   TokenizerContext *ctx,
-  const char* str,
+  char* str,
   const TokenKind kind
 ) {
   assert(ctx != NULL);
@@ -118,12 +135,12 @@ static bool consume_as_reserved(
   return false;
 }
 
-Token *tokenize(const char* p) {
+Token *tokenize(char* p) {
   assert(p != NULL);
 
   Token head;
   head.next = NULL;
-  TokenizerContext ctx = {p, &head};
+  TokenizerContext ctx = {.p = p, &head};
 
   while (*ctx.p) {
     // 空白文字をスキップ
@@ -144,11 +161,7 @@ Token *tokenize(const char* p) {
       continue;
     } 
     // 数値
-    if (isdigit(*ctx.p)) {
-      char* head = ctx.p;
-      int val = strtol(ctx.p, &ctx.p, 10);
-      ctx.cur = new_token(TK_NUM, ctx.cur, head, ctx.p - head);
-      ctx.cur->val = val;
+    if (consume_as_digit(&ctx)) {
       continue;
     }
     // 識別子
