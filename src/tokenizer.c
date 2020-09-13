@@ -1,4 +1,4 @@
-#include "9cc.h"
+#include "pcc.h"
 
 #include "stdbool.h"
 
@@ -158,12 +158,13 @@ Token *tokenize(char* p) {
       ctx.p++;
       continue;
     }
-    // リターン文
     if (consume_as_reserved(&ctx, "return", TK_RETURN)) {
       continue;
     }
-    // IF 文
     if (consume_as_reserved(&ctx, "if", TK_IF)) {
+      continue;
+    }
+    if (consume_as_reserved(&ctx, "else", TK_ELSE)) {
       continue;
     }
     // 予約語

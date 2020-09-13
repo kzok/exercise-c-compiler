@@ -32,7 +32,8 @@
   XX(TK_NUM) /** 整数トークン */ \
   XX(TK_EOF) /** 入力の終わりを表すトークン */ \
   XX(TK_RETURN) /** リターン文 */ \
-  XX(TK_IF) /** IF */ \
+  XX(TK_IF) /** if */ \
+  XX(TK_ELSE) /** else */ \
 
 typedef enum {
 #define XX(name) name,
@@ -105,9 +106,10 @@ struct Node {
   // kind が ND_LVAR の場合のみ使う
   int offset;
 
-  // "if" ( cond ) then
+  // "if" ( cond ) then "else" els
   Node *cond;
   Node *then;
+  Node *els;
 };
 
 void program();

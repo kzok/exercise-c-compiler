@@ -33,7 +33,7 @@
 ```
 program    = stmt*
 stmt       = expr ";"
-           | "if" "(" expr ")" stmt
+           | "if" "(" expr ")" stmt ("else" stmt)?
            | "return" expr ";"
 expr       = assign
 assign     = equality ("=" assign)?
@@ -44,7 +44,3 @@ mul        = unary ("*" unary | "/" unary)*
 unary      = ("+" | "-")? primary
 primary    = num | ident | "(" expr ")"
 ```
-
-## TODO
-
-- else 句の追加

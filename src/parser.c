@@ -234,6 +234,10 @@ static Node *stmt() {
     node->cond = expr();
     expect(")");
     node->then = stmt();
+    token = consume_token_kind(TK_ELSE);
+    if (token) {
+      node->els = stmt();
+    }
     return node;
   }
 

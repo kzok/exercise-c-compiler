@@ -27,12 +27,20 @@ void gen(Node *node) {
   if (node->kind == ND_IF) {
     const unsigned long label_id = generate_label_id();
     assert(node->cond != NULL);
+    assert(node->then != NULL);
     gen(node->cond);
     emit("pop rax");
     emit("cmp rax, 0");
-    emit("je  .Lend%ld", label_id);
-    assert(node->then != NULL);
-    gen(node->then);
+    if (node->els) {
+      emit("je  .Lelse%ld", label_id);
+      gen(node->then);
+      emit("jmp .Lend%ld", label_id);
+      p(".Lelse%ld:", label_id);
+      gen(node->els);
+    } else {
+      emit("je  .Lend%ld", label_id);
+      gen(node->then);
+    }
     p(".Lend%ld:", label_id);
     return;
   }

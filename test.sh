@@ -50,4 +50,7 @@ try 2 "if ( 1 ) return 2 ; return 3 ;"
 try 3 "if ( 0 ) return 2 ; return 3 ;"
 try 4 "a=1; if(1)a=a+3; if(0)a=a+3; a;"
 
+try 1 "a=0; if ( 1 ) a=1; else a=2; a;"
+try 2 "a=0; if ( 0 ) a=1; else a=2; a;"
+
 echo OK
