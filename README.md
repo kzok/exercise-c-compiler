@@ -47,7 +47,4 @@ primary    = num | ident | "(" expr ")"
 
 ## TODO
 
-- codegen.c のリファクタリング
-  - ポインタ参照前に assert(p != NULL); を追加
-  - gen(); の分割
 - else 句の追加
