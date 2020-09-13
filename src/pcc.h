@@ -22,7 +22,7 @@
 #endif
 
 /**
- * 字句解析
+ * tokenizer.c
  */
 
 // トークンの種類
@@ -55,30 +55,40 @@ struct Token {
   int len;
 };
 
-/**
- * 構文解析
- */
+Token *tokenize(char* p);
 
-#define NODE_KIND_MAP(XX) \
-  XX(ND_EQ) /** == */ \
-  XX(ND_NE) /** != */ \
-  XX(ND_LTE) /** <= */ \
-  XX(ND_LT) /** < */ \
-  XX(ND_ADD) /** + */ \
-  XX(ND_SUB) /** - */ \
-  XX(ND_MUL) /** * */ \
-  XX(ND_DIV) /** / */ \
-  XX(ND_ASSIGN) /** 代入 */ \
-  XX(ND_LVAR) /** ローカル変数 */ \
-  XX(ND_NUM) /** 整数 */ \
-  XX(ND_RETURN) /** リターン文 */ \
-  XX(ND_IF) /** if 文 */ \
+/**
+ * parser.c
+ */
 
 // 抽象構文木のノードの種類
 typedef enum {
-#define XX(name) name,
-  NODE_KIND_MAP(XX)
-#undef XX
+  /** == */
+  ND_EQ,
+  /** != */
+  ND_NE,
+  /** <= */
+  ND_LTE,
+  /** < */
+  ND_LT,
+  /** + */
+  ND_ADD,
+  /** - */
+  ND_SUB,
+  /** * */
+  ND_MUL,
+  /** / */
+  ND_DIV,
+  /** 代入 */
+  ND_ASSIGN,
+  /** ローカル変数 */
+  ND_LVAR,
+  /** 整数 */
+  ND_NUM,
+  /** リターン文 */
+  ND_RETURN,
+  /** if 文 */
+  ND_IF,
 } NodeKind;
 
 // 抽象構文木のノードの型
@@ -100,9 +110,9 @@ struct Node {
   Node *then;
 };
 
-/**
- * ローカル変数の型
- */
+void program();
+
+// ローカル変数の型
 typedef struct LVar LVar;
 struct LVar {
   // 次の変数か NULL
@@ -114,6 +124,12 @@ struct LVar {
   // RBP からのオフセット
   int offset;
 };
+
+/**
+ * codegen.c
+ */
+
+void gen(Node *node);
 
 /**
  * グローバル変数
@@ -150,24 +166,6 @@ EXTERN inline void error_at(const char* const loc, const char* const fmt, ...) {
   fprintf(stderr, "\n");
   exit(1);
 }
-
-/**
- * prototype of tokenizer.c
- */
-
-Token *tokenize(char* p);
-
-/**
- * prototype of parser.c
- */
-
-void program();
-
-/**
- * prototype of codegen.c
- */
-
-void gen(Node *node);
 
 #undef EXTERN
 #endif // #ifndef 9CC_H_INCLUDED

@@ -47,7 +47,6 @@ primary    = num | ident | "(" expr ")"
 
 ## TODO
 
-- 9cc.h をソースファイル毎にコメントで分ける
 - codegen.c のリファクタリング
   - ポインタ参照前に assert(p != NULL); を追加
   - gen(); の分割

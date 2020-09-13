@@ -1,4 +1,4 @@
-#include "9cc.h"
+#include "pcc.h"
 
 #include "error.h"
 
