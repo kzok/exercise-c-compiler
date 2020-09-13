@@ -15,7 +15,8 @@
 #endif
 
 #ifndef NDEBUG
-# define DEBUGF(...) do {fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
+# define DEBUGF(...) \
+  do {fprintf(stderr, "[DEBUG] ");fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
 #else
 # define DEBUGF(fmt, ...)
 #endif

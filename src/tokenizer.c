@@ -49,7 +49,7 @@ static Token *new_token(
   tok->len = len;
   cur->next = tok;
 
-  DEBUGF("[debug] tokenize \"%.*s\" as %s.\n", len, str, token_kind_str(kind));
+  DEBUGF("tokenize \"%.*s\" as %s.\n", len, str, token_kind_str(kind));
   return tok;
 }
 

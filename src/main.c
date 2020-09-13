@@ -7,6 +7,8 @@
  */
 
 int main(int argc, char **argv) {
+  DEBUGF("==================== START PROCESS ==================== \n");
+
   if (argc != 2) {
     fprintf(stderr, "引数の個数が正しくありません\n");
     return 1;
@@ -25,7 +27,7 @@ int main(int argc, char **argv) {
   // プロローグ
   // 変数分の領域を確保する
   const int localsSize = g_locals == NULL ? 0 : g_locals->offset + 8;
-  DEBUGF("[debug] total size of local variables: %d bytes\n", localsSize);
+  DEBUGF("total size of local variables: %d bytes\n", localsSize);
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, %d\n", localsSize);
