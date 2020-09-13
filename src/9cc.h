@@ -72,6 +72,7 @@ struct Token {
   XX(ND_LVAR) /** ローカル変数 */ \
   XX(ND_NUM) /** 整数 */ \
   XX(ND_RETURN) /** リターン文 */ \
+  XX(ND_IF) /** if 文 */ \
 
 // 抽象構文木のノードの種類
 typedef enum {
@@ -93,6 +94,10 @@ struct Node {
   int val;
   // kind が ND_LVAR の場合のみ使う
   int offset;
+
+  // "if" ( cond ) then
+  Node *cond;
+  Node *then;
 };
 
 /**

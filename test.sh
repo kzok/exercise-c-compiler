@@ -46,5 +46,8 @@ try 3 "a = 1; b = a + 2; b;"
 try 6 "foo = 1; bar = 2 + 3; foo + bar;"
 try 5 "return 5; return 8;"
 
+try 2 "if ( 1 ) return 2 ; return 3 ;"
+try 3 "if ( 0 ) return 2 ; return 3 ;"
+try 4 "a=1; if(1)a=a+3; if(0)a=a+3; a;"
 
 echo OK

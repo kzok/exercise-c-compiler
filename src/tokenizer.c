@@ -138,7 +138,7 @@ static bool consume_as_reserved(
 
   const size_t len = strlen(str);
   if (strncmp(ctx->p, str, len) == 0 && !is_alnum((ctx->p)[len])) {
-    ctx->cur = new_token(TK_RETURN, ctx->cur, ctx->p, len);
+    ctx->cur = new_token(kind, ctx->cur, ctx->p, len);
     ctx->p += len;
     return true;
   }

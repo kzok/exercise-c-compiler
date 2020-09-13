@@ -2,6 +2,12 @@
 
 #include "error.h"
 
+static unsigned long g_label_count = 0;
+
+static unsigned long generate_label_id() {
+  return ++g_label_count;
+}
+
 static void gen_lval(Node *node) {
   if (node->kind != ND_LVAR) {
     perror("代入の左辺値が変数ではありません");
@@ -13,7 +19,22 @@ static void gen_lval(Node *node) {
 }
 
 void gen(Node *node) {
+  assert(node != NULL);
+
+  if (node->kind == ND_IF) {
+    const label_id = generate_label_id();
+    assert(node->cond != NULL);
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    printf("  je  .Lend%03d\n", label_id);
+    assert(node->then != NULL);
+    gen(node->then);
+    printf(".Lend%03d:\n", label_id);
+    return;
+  }
   if (node->kind == ND_RETURN) {
+    assert(node->lhs != NULL);
     gen(node->lhs);
     printf("  pop rax\n");
     printf("  mov rsp, rbp\n");

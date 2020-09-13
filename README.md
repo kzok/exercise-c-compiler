@@ -33,6 +33,7 @@
 ```
 program    = stmt*
 stmt       = expr ";"
+           | "if" "(" expr ")" stmt
            | "return" expr ";"
 expr       = assign
 assign     = equality ("=" assign)?
@@ -46,7 +47,8 @@ primary    = num | ident | "(" expr ")"
 
 ## TODO
 
-- if 文の追加
-  - if のトークンを追加
-  - if のパーサを追加
+- 9cc.h をソースファイル毎にコメントで分ける
+- codegen.c のリファクタリング
+  - ポインタ参照前に assert(p != NULL); を追加
+  - gen(); の分割
 - else 句の追加
