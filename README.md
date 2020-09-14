@@ -4,6 +4,11 @@
 
 [低レイヤを知りたい人のためのCコンパイラ作成入門](https://www.sigbus.info/compilerbook)の演習用リポジトリ
 
+## 参考資料
+
+- [9cc](https://github.com/rui314/9cc)
+- [chibicc](https://github.com/rui314/chibicc)
+
 ## 目的
 
 - 実際に作ってみて構文解析（≒AST）のしくみを理解する
