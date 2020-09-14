@@ -66,4 +66,10 @@ try 2 "a=0; if ( 0 ) a=1; else a=2; a;"
 # while
 try 10 "a=0; while(a<10)a=a+1; a;"
 
+# for
+try 10 "a=11; for(a=0;a<10;a=a+1) a;"
+try 11 "a=11; for(;a<10;a=a+1) a; a;"
+try 10 "a=11; for(a=0;a<10;) a=a+1; a;"
+try 5 "a=0; for(a=9;a>5;a=a-1) a;"
+
 echo -e '\e[32mAll tests passed!\e[0m'

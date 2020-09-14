@@ -35,6 +35,7 @@
   XX(TK_IF) /** if */ \
   XX(TK_ELSE) /** else */ \
   XX(TK_WHILE) /** while */ \
+  XX(TK_FOR) /** for */ \
 
 typedef enum {
 #define XX(name) name,
@@ -93,6 +94,8 @@ typedef enum {
   ND_IF,
   /** while 文 */
   ND_WHILE,
+  /** for 文 */
+  ND_FOR,
 } NodeKind;
 
 // 抽象構文木のノードの型
@@ -112,9 +115,12 @@ struct Node {
   // 制御構文用の子ノード
   // "if" "("" cond ")" then "else" els
   // "while" "(" cond ")" then
+  // "for" "(" init ";" cond ";" inc ")" then
   Node *cond;
   Node *then;
   Node *els;
+  Node *init;
+  Node *inc;
 };
 
 void program();

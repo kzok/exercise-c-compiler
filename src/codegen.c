@@ -58,6 +58,27 @@ void gen(Node *node) {
     p(".Lend%ld:", label_id);
     return;
   }
+  if (node->kind == ND_FOR) {
+    const unsigned long label_id = generate_label_id();
+    assert(node->then != NULL);
+    if (node->init) {
+      gen(node->init);
+    }
+    p(".Lbegin%ld:", label_id);
+    if (node->cond) {
+      gen(node->cond);
+      emit("pop rax");
+      emit("cmp rax, 0");
+      emit("je  .Lend%ld", label_id);
+    }
+    gen(node->then);
+    if (node->inc) {
+      gen(node->inc);
+    }
+    emit("jmp .Lbegin%ld", label_id);
+    p(".Lend%ld:", label_id);
+    return;
+  }
   if (node->kind == ND_RETURN) {
     assert(node->lhs != NULL);
     gen(node->lhs);

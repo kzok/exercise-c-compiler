@@ -170,6 +170,9 @@ Token *tokenize(char* p) {
     if (consume_as_reserved(&ctx, "while", TK_WHILE)) {
       continue;
     }
+    if (consume_as_reserved(&ctx, "for", TK_FOR)) {
+      continue;
+    }
     // 予約語
     if (consume_as_sign(&ctx)) {
       continue;

@@ -252,6 +252,27 @@ static Node *stmt() {
     return node;
   }
 
+  // for
+  token = consume_token_kind(TK_FOR);
+  if (token) {
+    node = new_node(ND_FOR, NULL, NULL);
+    expect("(");
+    if (!consume_as_sign(";")) {
+      node->init = expr();
+      expect(";");
+    }
+    if (!consume_as_sign(";")) {
+      node->cond = expr();
+      expect(";");
+    }
+    if (!consume_as_sign(")")) {
+      node->inc = expr();
+      expect(")");
+    }
+    node->then = stmt();
+    return node;
+  }
+
   token = consume_token_kind(TK_RETURN);
   if (token) {
     node = new_node(ND_RETURN, expr(), NULL);
