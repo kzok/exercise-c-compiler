@@ -44,6 +44,20 @@ void gen(Node *node) {
     p(".Lend%ld:", label_id);
     return;
   }
+  if (node->kind == ND_WHILE) {
+    const unsigned long label_id = generate_label_id();
+    assert(node->cond != NULL);
+    assert(node->then != NULL);
+    p(".Lbegin%ld:", label_id);
+    gen(node->cond);
+    emit("pop rax");
+    emit("cmp rax, 0");
+    emit("je  .Lend%ld", label_id);
+    gen(node->then);
+    emit("jmp .Lbegin%ld", label_id);
+    p(".Lend%ld:", label_id);
+    return;
+  }
   if (node->kind == ND_RETURN) {
     assert(node->lhs != NULL);
     gen(node->lhs);

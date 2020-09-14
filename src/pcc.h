@@ -34,6 +34,7 @@
   XX(TK_RETURN) /** リターン文 */ \
   XX(TK_IF) /** if */ \
   XX(TK_ELSE) /** else */ \
+  XX(TK_WHILE) /** while */ \
 
 typedef enum {
 #define XX(name) name,
@@ -90,6 +91,8 @@ typedef enum {
   ND_RETURN,
   /** if 文 */
   ND_IF,
+  /** while 文 */
+  ND_WHILE,
 } NodeKind;
 
 // 抽象構文木のノードの型
@@ -106,7 +109,9 @@ struct Node {
   // kind が ND_LVAR の場合のみ使う
   int offset;
 
-  // "if" ( cond ) then "else" els
+  // 制御構文用の子ノード
+  // "if" "("" cond ")" then "else" els
+  // "while" "(" cond ")" then
   Node *cond;
   Node *then;
   Node *els;

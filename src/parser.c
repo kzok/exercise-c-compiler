@@ -241,6 +241,17 @@ static Node *stmt() {
     return node;
   }
 
+  // while
+  token = consume_token_kind(TK_WHILE);
+  if (token) {
+    node = new_node(ND_WHILE, NULL, NULL);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    return node;
+  }
+
   token = consume_token_kind(TK_RETURN);
   if (token) {
     node = new_node(ND_RETURN, expr(), NULL);

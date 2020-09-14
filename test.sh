@@ -59,8 +59,11 @@ try 5 "return 5; return 8;"
 # if, else
 try 2 "if ( 1 ) return 2 ; return 3 ;"
 try 3 "if ( 0 ) return 2 ; return 3 ;"
-try 4 "a=1; if(1)a=a+3; if(0)a=a+3; a;"
+try 3 "a=1; if(1)a=a+2; if(0)a=a+3; a;"
 try 1 "a=0; if ( 1 ) a=1; else a=2; a;"
 try 2 "a=0; if ( 0 ) a=1; else a=2; a;"
+
+# while
+try 10 "a=0; while(a<10)a=a+1; a;"
 
 echo -e '\e[32mAll tests passed!\e[0m'
