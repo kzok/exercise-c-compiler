@@ -1,12 +1,14 @@
 #define ENTRYPOINT
 
-#include "9cc.h"
+#include "pcc.h"
 
 /**
  * ENTRY POINT
  */
 
 int main(int argc, char **argv) {
+  DEBUGF("==================== START PROCESS ==================== \n");
+
   if (argc != 2) {
     fprintf(stderr, "引数の個数が正しくありません\n");
     return 1;
@@ -25,13 +27,14 @@ int main(int argc, char **argv) {
   // プロローグ
   // 変数分の領域を確保する
   const int localsSize = g_locals == NULL ? 0 : g_locals->offset + 8;
-  DEBUGF("[debug] local size: %d bytes\n", localsSize);
+  DEBUGF("total size of local variables: %d bytes\n", localsSize);
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, %d\n", localsSize);
 
   // 先頭の式から順にコード生成
   for (int i = 0; g_code[i]; i++) {
+    DEBUGF("program line #%d\n", i);
     gen(g_code[i]);
 
     // 式の評価結果としてスタックに一つの値が残っている

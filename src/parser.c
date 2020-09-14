@@ -1,12 +1,18 @@
-#include "9cc.h"
+#include "pcc.h"
 
 #include <stdbool.h>
 #include <string.h>
+
+static void seek_token() {
+  assert(g_token != NULL);
+  g_token = g_token->next;
+}
 
 // 次のトークンが期待している記号のときには、トークンを一つ読み進める。
 // それ以外の場合にはエラーを報告する。
 static void expect(char *op) {
   assert(op != NULL);
+  assert(g_token != NULL);
 
   if (
     g_token->kind != TK_SIGN
@@ -15,7 +21,7 @@ static void expect(char *op) {
   ) {
     error_at(g_token->str, "'%s' ではありません", op);
   }
-  g_token = g_token->next;
+  seek_token();
 }
 
 static bool at_eof() {
@@ -35,7 +41,7 @@ static bool consume_as_sign(char *op) {
   ) {
     return false;
   }
-  g_token = g_token->next;
+  seek_token();
   return true;
 }
 
@@ -49,7 +55,7 @@ static Token *consume_token_kind(TokenKind kind) {
     return NULL;
   }
   Token *current = g_token;
-  g_token = g_token->next;
+  seek_token();
   return current;
 }
 
@@ -62,7 +68,7 @@ static int expect_number() {
     error_at(g_token->str, "数ではありません");
   }
   int val = g_token->val;
-  g_token = g_token->next;
+  seek_token();
   return val;
 }
 
@@ -218,7 +224,56 @@ static Node *expr() {
 
 static Node *stmt() {
   Node *node;
-  Token *token = consume_token_kind(TK_RETURN);
+  Token *token;
+
+  // if
+  token = consume_token_kind(TK_IF);
+  if (token) {
+    node = new_node(ND_IF, NULL, NULL);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    token = consume_token_kind(TK_ELSE);
+    if (token) {
+      node->els = stmt();
+    }
+    return node;
+  }
+
+  // while
+  token = consume_token_kind(TK_WHILE);
+  if (token) {
+    node = new_node(ND_WHILE, NULL, NULL);
+    expect("(");
+    node->cond = expr();
+    expect(")");
+    node->then = stmt();
+    return node;
+  }
+
+  // for
+  token = consume_token_kind(TK_FOR);
+  if (token) {
+    node = new_node(ND_FOR, NULL, NULL);
+    expect("(");
+    if (!consume_as_sign(";")) {
+      node->init = expr();
+      expect(";");
+    }
+    if (!consume_as_sign(";")) {
+      node->cond = expr();
+      expect(";");
+    }
+    if (!consume_as_sign(")")) {
+      node->inc = expr();
+      expect(")");
+    }
+    node->then = stmt();
+    return node;
+  }
+
+  token = consume_token_kind(TK_RETURN);
   if (token) {
     node = new_node(ND_RETURN, expr(), NULL);
   } else {

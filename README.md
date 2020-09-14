@@ -4,6 +4,11 @@
 
 [低レイヤを知りたい人のためのCコンパイラ作成入門](https://www.sigbus.info/compilerbook)の演習用リポジトリ
 
+## 参考資料
+
+- [9cc](https://github.com/rui314/9cc)
+- [chibicc](https://github.com/rui314/chibicc)
+
 ## 目的
 
 - 実際に作ってみて構文解析（≒AST）のしくみを理解する
@@ -11,7 +16,7 @@
 
 ## 使い方
 
-※ Linux/x86-64 で動かして下さい
+※ Linux/x86-64 でのみ動きます
 ※ vscode を使う場合は拡張機能 "Remote - Containers" で開発環境を整えられます
 
 - ビルド
@@ -34,6 +39,8 @@
 program    = stmt*
 stmt       = expr ";"
            | "if" "(" expr ")" stmt ("else" stmt)?
+           | "while" "(" expr ")" stmt
+           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
            | "return" expr ";"
 expr       = assign
 assign     = equality ("=" assign)?
@@ -44,11 +51,3 @@ mul        = unary ("*" unary | "/" unary)*
 unary      = ("+" | "-")? primary
 primary    = num | ident | "(" expr ")"
 ```
-
-## TODO
-
-- return のトークナイザを関数化
-- if 文の追加
-  - if のトークンを追加
-  - if のパーサを追加
-- else 句の追加

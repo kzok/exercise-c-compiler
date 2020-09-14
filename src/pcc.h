@@ -14,28 +14,33 @@
 #  define EXTERN
 #endif
 
-#ifdef DEBUG
-# define DEBUGF(...) do {fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
+#ifndef NDEBUG
+# define DEBUGF(...) \
+  do {fprintf(stderr, "[DEBUG] ");fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
 #else
 # define DEBUGF(fmt, ...)
 #endif
 
 /**
- * 字句解析
+ * tokenizer.c
  */
 
 // トークンの種類
+#define TOKEN_KIND_MAP(XX) \
+  XX(TK_SIGN) /** 記号 */ \
+  XX(TK_IDENT) /** 識別子 */ \
+  XX(TK_NUM) /** 整数トークン */ \
+  XX(TK_EOF) /** 入力の終わりを表すトークン */ \
+  XX(TK_RETURN) /** リターン文 */ \
+  XX(TK_IF) /** if */ \
+  XX(TK_ELSE) /** else */ \
+  XX(TK_WHILE) /** while */ \
+  XX(TK_FOR) /** for */ \
+
 typedef enum {
-  // 記号
-  TK_SIGN,
-  // 識別子
-  TK_IDENT,
-  // 整数トークン
-  TK_NUM,
-  // 入力の終わりを表すトークン
-  TK_EOF,
-  // リターン文
-  TK_RETURN,
+#define XX(name) name,
+  TOKEN_KIND_MAP(XX)
+#undef XX
 } TokenKind;
 
 // トークン型
@@ -53,36 +58,34 @@ struct Token {
   int len;
 };
 
+Token *tokenize(char* p);
+
 /**
- * 構文解析
+ * parser.c
  */
 
 // 抽象構文木のノードの種類
+#define NODE_KIND_MAP(XX) \
+   XX(ND_EQ) /** == */ \
+   XX(ND_NE) /** != */ \
+   XX(ND_LTE) /** <= */ \
+   XX(ND_LT) /** < */ \
+   XX(ND_ADD) /** + */ \
+   XX(ND_SUB) /** - */ \
+   XX(ND_MUL) /** * */ \
+   XX(ND_DIV) /** / */ \
+   XX(ND_ASSIGN) /** 代入 */ \
+   XX(ND_LVAR) /** ローカル変数 */ \
+   XX(ND_NUM) /** 整数 */ \
+   XX(ND_RETURN) /** リターン文 */ \
+   XX(ND_IF) /** if 文 */ \
+   XX(ND_WHILE) /** while 文 */ \
+   XX(ND_FOR) /** for 文 */ \
+
 typedef enum {
-  // ==
-  ND_EQ,
-  // !=
-  ND_NE,
-  // <=
-  ND_LTE,
-  // <
-  ND_LT,
-  // +
-  ND_ADD,
-  // -
-  ND_SUB,
-  // *
-  ND_MUL,
-  // / 
-  ND_DIV,
-  // 代入
-  ND_ASSIGN,
-  // ローカル変数
-  ND_LVAR,
-  // 整数
-  ND_NUM,
-  // リターン文
-  ND_RETURN,
+#define XX(name) name,
+  NODE_KIND_MAP(XX)
+#undef XX
 } NodeKind;
 
 // 抽象構文木のノードの型
@@ -98,11 +101,21 @@ struct Node {
   int val;
   // kind が ND_LVAR の場合のみ使う
   int offset;
+
+  // 制御構文用の子ノード
+  // "if" "("" cond ")" then "else" els
+  // "while" "(" cond ")" then
+  // "for" "(" init ";" cond ";" inc ")" then
+  Node *cond;
+  Node *then;
+  Node *els;
+  Node *init;
+  Node *inc;
 };
 
-/**
- * ローカル変数の型
- */
+void program();
+
+// ローカル変数の型
 typedef struct LVar LVar;
 struct LVar {
   // 次の変数か NULL
@@ -114,6 +127,12 @@ struct LVar {
   // RBP からのオフセット
   int offset;
 };
+
+/**
+ * codegen.c
+ */
+
+void gen(Node *node);
 
 /**
  * グローバル変数
@@ -131,6 +150,24 @@ EXTERN LVar *g_locals;
 /**
  * インライン関数
  */
+
+static inline const char* token_kind_str(TokenKind kind) {
+  switch (kind) {
+#define XX(name) case name: return #name;
+    TOKEN_KIND_MAP(XX)
+#undef XX
+    default: return "<unknown>";
+  }
+}
+
+static inline const char* node_kind_str(NodeKind kind) {
+  switch (kind) {
+#define XX(name) case name: return #name;
+    NODE_KIND_MAP(XX)
+#undef XX
+    default: return "<unknown>";
+  }
+}
 
 // エラーを報告するための関数
 // printf と同じ引数を取る
@@ -150,24 +187,6 @@ EXTERN inline void error_at(const char* const loc, const char* const fmt, ...) {
   fprintf(stderr, "\n");
   exit(1);
 }
-
-/**
- * prototype of tokenizer.c
- */
-
-Token *tokenize(char* p);
-
-/**
- * prototype of parser.c
- */
-
-void program();
-
-/**
- * prototype of codegen.c
- */
-
-void gen(Node *node);
 
 #undef EXTERN
 #endif // #ifndef 9CC_H_INCLUDED
