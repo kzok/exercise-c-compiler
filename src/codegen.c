@@ -22,6 +22,7 @@ static void gen_lval(Node *node) {
 
 void gen(Node *node) {
   assert(node != NULL);
+  DEBUGF("consume node %s.\n", node_kind_str(node->kind));
 
   // control syntax
   if (node->kind == ND_IF) {

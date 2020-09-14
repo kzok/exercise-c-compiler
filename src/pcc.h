@@ -65,37 +65,27 @@ Token *tokenize(char* p);
  */
 
 // 抽象構文木のノードの種類
+#define NODE_KIND_MAP(XX) \
+   XX(ND_EQ) /** == */ \
+   XX(ND_NE) /** != */ \
+   XX(ND_LTE) /** <= */ \
+   XX(ND_LT) /** < */ \
+   XX(ND_ADD) /** + */ \
+   XX(ND_SUB) /** - */ \
+   XX(ND_MUL) /** * */ \
+   XX(ND_DIV) /** / */ \
+   XX(ND_ASSIGN) /** 代入 */ \
+   XX(ND_LVAR) /** ローカル変数 */ \
+   XX(ND_NUM) /** 整数 */ \
+   XX(ND_RETURN) /** リターン文 */ \
+   XX(ND_IF) /** if 文 */ \
+   XX(ND_WHILE) /** while 文 */ \
+   XX(ND_FOR) /** for 文 */ \
+
 typedef enum {
-  /** == */
-  ND_EQ,
-  /** != */
-  ND_NE,
-  /** <= */
-  ND_LTE,
-  /** < */
-  ND_LT,
-  /** + */
-  ND_ADD,
-  /** - */
-  ND_SUB,
-  /** * */
-  ND_MUL,
-  /** / */
-  ND_DIV,
-  /** 代入 */
-  ND_ASSIGN,
-  /** ローカル変数 */
-  ND_LVAR,
-  /** 整数 */
-  ND_NUM,
-  /** リターン文 */
-  ND_RETURN,
-  /** if 文 */
-  ND_IF,
-  /** while 文 */
-  ND_WHILE,
-  /** for 文 */
-  ND_FOR,
+#define XX(name) name,
+  NODE_KIND_MAP(XX)
+#undef XX
 } NodeKind;
 
 // 抽象構文木のノードの型
@@ -160,6 +150,24 @@ EXTERN LVar *g_locals;
 /**
  * インライン関数
  */
+
+static inline const char* token_kind_str(TokenKind kind) {
+  switch (kind) {
+#define XX(name) case name: return #name;
+    TOKEN_KIND_MAP(XX)
+#undef XX
+    default: return "<unknown>";
+  }
+}
+
+static inline const char* node_kind_str(NodeKind kind) {
+  switch (kind) {
+#define XX(name) case name: return #name;
+    NODE_KIND_MAP(XX)
+#undef XX
+    default: return "<unknown>";
+  }
+}
 
 // エラーを報告するための関数
 // printf と同じ引数を取る

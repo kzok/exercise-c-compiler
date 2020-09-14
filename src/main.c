@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
 
   // 先頭の式から順にコード生成
   for (int i = 0; g_code[i]; i++) {
+    DEBUGF("program line #%d\n", i);
     gen(g_code[i]);
 
     // 式の評価結果としてスタックに一つの値が残っている

@@ -24,15 +24,6 @@ static bool is_alnum(char c) {
     (c == '_');
 }
 
-static const char* token_kind_str(TokenKind kind) {
-  switch (kind) {
-#define XX(name) case name: return #name;
-    TOKEN_KIND_MAP(XX)
-#undef XX
-    default: return "<unknown>";
-  }
-}
-
 // 新しいトークンを作成して cur に繋げる
 static Token *new_token(
   TokenKind kind,
