@@ -12,7 +12,7 @@ typedef struct TokenizerContext {
 
 static const char *const SIGNES[] = {
   ">=", "<=",
-  ">", "<", "(", ")",
+  ">", "<", "(", ")", "{", "}",
   "+", "-", "*", "/",
   ";", "="
 };

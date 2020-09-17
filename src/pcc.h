@@ -1,3 +1,6 @@
+#ifndef _9CC_H_IS_INCLUDED
+#define _9CC_H_IS_INCLUDED
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -5,8 +8,7 @@
 #include <string.h>
 #include <assert.h>
 
-#ifndef _9CC_H_IS_INCLUDED
-#define _9CC_H_IS_INCLUDED
+#include "./vector.h"
 
 #ifdef ENTRYPOINT
 #  define EXTERN extern
@@ -81,6 +83,7 @@ Token *tokenize(char* p);
    XX(ND_IF) /** if 文 */ \
    XX(ND_WHILE) /** while 文 */ \
    XX(ND_FOR) /** for 文 */ \
+   XX(ND_BLOCK) /** block */ \
 
 typedef enum {
 #define XX(name) name,
@@ -111,6 +114,9 @@ struct Node {
   Node *els;
   Node *init;
   Node *inc;
+
+  // ND_BLOCK
+  Vector* children;
 };
 
 void program();
@@ -132,7 +138,7 @@ struct LVar {
  * codegen.c
  */
 
-void gen(Node *node);
+void codegen();
 
 /**
  * グローバル変数

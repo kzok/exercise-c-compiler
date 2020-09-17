@@ -72,4 +72,7 @@ try 11 "a=11; for(;a<10;a=a+1) a; a;"
 try 10 "a=11; for(a=0;a<10;) a=a+1; a;"
 try 5 "a=0; for(a=9;a>5;a=a-1) a;"
 
+# block
+try 3 "a=0; if(1){a=a+1; a=a+2;} else a=9; a;"
+
 echo -e '\e[32mAll tests passed!\e[0m'
