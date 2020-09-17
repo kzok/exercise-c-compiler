@@ -226,6 +226,16 @@ static Node *stmt() {
   Node *node;
   Token *token;
 
+  // block
+  if (consume_as_sign("{")) {
+    node = new_node(ND_BLOCK, NULL, NULL);
+    node->children = vector_new();
+    while (!consume_as_sign("}")) {
+      vector_push(node->children, stmt());
+    }
+    return node;
+  }
+
   // if
   token = consume_token_kind(TK_IF);
   if (token) {

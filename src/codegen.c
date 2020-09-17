@@ -24,6 +24,18 @@ void gen(Node *node) {
   assert(node != NULL);
   DEBUGF("consume node %s.\n", node_kind_str(node->kind));
 
+  // block
+  if (node->kind == ND_BLOCK) {
+    assert(node->children != NULL);
+    for (size_t i = 0; i < node->children->length; i += 1) {
+      gen((Node*)vector_at(node->children, i));
+      // 式の評価結果としてスタックに一つの値が残っている
+      // はずなので、スタックが溢れないようにポップしておく
+      printf("  pop rax\n");
+    }
+    return;
+  }
+
   // control syntax
   if (node->kind == ND_IF) {
     const unsigned long label_id = generate_label_id();

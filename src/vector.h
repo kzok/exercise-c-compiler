@@ -18,6 +18,7 @@ static inline Vector *vector_new() {
   vector->capacity = 16;
   vector->data = (void**)calloc(sizeof(void *), vector->capacity);
   vector->length = 0;
+  return vector;
 }
 
 static inline void vector_push(Vector *vector, void* el) {
@@ -25,6 +26,8 @@ static inline void vector_push(Vector *vector, void* el) {
   if (vector->length == vector->capacity) {
     vector->capacity *= 2;
     vector->data = (void**)realloc(vector->data, sizeof(void *) * vector->capacity);
+    // zero fill to additional memory spaces
+    memset(vector->data + vector->length, 0, vector->capacity - vector->length);
   }
   vector->data[vector->length] = el;
   vector->length += 1;
@@ -32,7 +35,7 @@ static inline void vector_push(Vector *vector, void* el) {
 
 static inline void* vector_at(Vector *vector, size_t index) {
   assert(vector != NULL);
-  assert(vector->length - 1 > index);
+  assert(index < vector->length);
   return vector->data[index];
 }
 
