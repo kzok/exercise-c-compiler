@@ -138,7 +138,7 @@ struct LVar {
  * codegen.c
  */
 
-void gen(Node *node);
+void codegen();
 
 /**
  * グローバル変数
