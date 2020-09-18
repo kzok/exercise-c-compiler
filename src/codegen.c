@@ -31,7 +31,7 @@ static void gen(Node *node) {
       gen((Node*)vector_at(node->children, i));
       // 式の評価結果としてスタックに一つの値が残っている
       // はずなので、スタックが溢れないようにポップしておく
-      printf("  pop rax\n");
+      emit("pop rax");
     }
     return;
   }
@@ -180,17 +180,17 @@ static void gen(Node *node) {
 
 void codegen() {
   // アセンブリの前半部分を出力
-  p(".intel_syntax noprefix\n");
-  p(".global main\n");
-  p("main:\n");
+  p(".intel_syntax noprefix");
+  p(".global main");
+  p("main:");
 
   // プロローグ
   // 変数分の領域を確保する
   const int localsSize = g_locals == NULL ? 0 : g_locals->offset + 8;
   DEBUGF("total size of local variables: %d bytes\n", localsSize);
-  emit("push rbp\n");
-  emit("mov rbp, rsp\n");
-  emit("sub rsp, %d\n", localsSize);
+  emit("push rbp");
+  emit("mov rbp, rsp");
+  emit("sub rsp, %d", localsSize);
 
   // 先頭の式から順にコード生成
   for (int i = 0; g_code[i]; i++) {
@@ -199,12 +199,12 @@ void codegen() {
 
     // 式の評価結果としてスタックに一つの値が残っている
     // はずなので、スタックが溢れないようにポップしておく
-    emit("pop rax\n");
+    emit("pop rax");
   }
 
   // エピローグ
   // 最後の式の結果が rax に残っているのでそれが戻り値になる
-  emit("mov rsp, rbp\n");
-  emit("pop rbp\n");
-  emit("ret\n");
+  emit("mov rsp, rbp");
+  emit("pop rbp");
+  emit("ret");
 }
