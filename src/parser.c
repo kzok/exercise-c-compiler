@@ -103,6 +103,8 @@ static LVar *find_lvar(Token *tok) {
  * Syntax rules
  */
 
+static Node *assign();
+
 static Node *expr();
 
 static Node *primary() {
@@ -116,9 +118,17 @@ static Node *primary() {
   token = consume_token_kind(TK_IDENT);
   if (token) {
     if (consume_as_sign("(")) {
-      expect(")");
-      Node *node = new_node(ND_FCALL, NULL, NULL);
+      Node *node = new_node(ND_FUNCALL, NULL, NULL);
       node->funcname = strndup(token->str, token->len);
+
+      node->funcargs = vector_new();
+      if (!consume_as_sign(")")){
+        vector_push(node->funcargs, assign());
+        while (consume_as_sign(",")) {
+          vector_push(node->funcargs, assign());
+        }
+        expect(")");
+      }
       return node;
     }
     Node *node = new_node(ND_LVAR, NULL, NULL);

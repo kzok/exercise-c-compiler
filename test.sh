@@ -11,8 +11,9 @@ cd $(dirname $0)
 cd ./out
 
 cat <<EOF | gcc -xc -c -o tmp2.o -
-int foo() {return 3;}
-int bar() {return 5;}
+int add(int a, int b) {return a + b;}
+int sub(int a, int b) {return a - b;}
+int sum6(int a, int b, int c, int d, int e, int f) {return a + b + c + d + e + f;}
 EOF
 
 try() {
@@ -81,7 +82,8 @@ try 5 "a=0; for(a=9;a>5;a=a-1) a;"
 try 3 "a=0; if(1){a=a+1; a=a+2;} else a=9; a;"
 
 # function call
-try 3 "foo();"
-try 5 "bar();"
+try 3 "add(1, 2);"
+try 5 "sub(8, 3);"
+try 21 "sum6(1,2,3,4,5,6);"
 
 echo -e '\e[32mAll tests passed!\e[0m'
