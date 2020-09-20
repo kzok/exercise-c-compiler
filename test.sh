@@ -10,13 +10,18 @@ cd $(dirname $0)
 
 cd ./out
 
+cat <<EOF | gcc -xc -c -o tmp2.o -
+int foo() {return 3;}
+int bar() {return 5;}
+EOF
+
 try() {
 	expected="$1"
 	input="$2"
 
 	set +e
 	./pcc "$input" > tmp.s
-	gcc -o tmp tmp.s
+	gcc -o tmp tmp.s tmp2.o
 	./tmp
 	actual="$?"
 	set -e
@@ -74,5 +79,9 @@ try 5 "a=0; for(a=9;a>5;a=a-1) a;"
 
 # block
 try 3 "a=0; if(1){a=a+1; a=a+2;} else a=9; a;"
+
+# function call
+try 3 "foo();"
+try 5 "bar();"
 
 echo -e '\e[32mAll tests passed!\e[0m'

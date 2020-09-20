@@ -127,6 +127,14 @@ static void gen(Node *node) {
     return;
   }
 
+  // function call
+  if (node->kind == ND_FCALL) {
+    assert(node->funcname != NULL);
+    emit("call %s", node->funcname);
+    emit("push rax");
+    return;
+  }
+
   // binary operators
   assert(node->lhs != NULL);
   gen(node->lhs);

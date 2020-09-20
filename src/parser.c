@@ -106,17 +106,22 @@ static LVar *find_lvar(Token *tok) {
 static Node *expr();
 
 static Node *primary() {
+  Token *token;
   // トークンが "(" ならば "(" expr ")" のはず
   if (consume_as_sign("(")) {
     Node *node = expr();
     expect(")");
     return node;
   }
-  Token *token = consume_token_kind(TK_IDENT);
+  token = consume_token_kind(TK_IDENT);
   if (token) {
-    Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_LVAR;
-
+    if (consume_as_sign("(")) {
+      expect(")");
+      Node *node = new_node(ND_FCALL, NULL, NULL);
+      node->funcname = strndup(token->str, token->len);
+      return node;
+    }
+    Node *node = new_node(ND_LVAR, NULL, NULL);
     LVar *lvar = find_lvar(token);
     if (lvar) {
       node->offset = lvar->offset;

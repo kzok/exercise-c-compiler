@@ -84,6 +84,7 @@ Token *tokenize(char* p);
    XX(ND_WHILE) /** while 文 */ \
    XX(ND_FOR) /** for 文 */ \
    XX(ND_BLOCK) /** block */ \
+   XX(ND_FCALL) /** 関数呼出 */ \
 
 typedef enum {
 #define XX(name) name,
@@ -117,6 +118,9 @@ struct Node {
 
   // ND_BLOCK
   Vector* children;
+
+  // ND_FCALL
+  char *funcname;
 };
 
 void program();
