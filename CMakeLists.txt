@@ -12,6 +12,9 @@ project(pcc)
 # Targets
 #
 
+# NOTE: comment out if you want to see DEBUGF()
+# add_compile_definitions(DEBUG)
+
 file(GLOB_RECURSE source_files src/*.c)
 add_executable(${PROJECT_NAME} ${source_files})
 

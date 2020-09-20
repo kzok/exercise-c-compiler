@@ -16,7 +16,7 @@
 #  define EXTERN
 #endif
 
-#ifndef NDEBUG
+#ifdef DEBUG
 # define DEBUGF(...) \
   do {fprintf(stderr, "[DEBUG] ");fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
 #else
