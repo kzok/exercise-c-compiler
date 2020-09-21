@@ -143,7 +143,24 @@ static void gen(Node *node) {
     for (int i = arg_count - 1; i >= 0; i -= 1) {
       emit("pop %s", arg_regs[i]);
     }
+
+    /**
+     * @see https://github.com/rui314/chibicc/commit/ee42303
+     * 関数呼出の前に RSP の値が 16 の倍数でなければならないためそのための対応をする
+     */
+    const unsigned long label_id = generate_label_id();
+    emit("mov rax, rsp");
+    emit("and rax, 15");
+    emit("jnz .L.call.%d", label_id);
+    emit("mov rax, 0");
     emit("call %s", node->funcname);
+    emit("jmp .L.end.%d", label_id);
+    p(".L.call.%d:", label_id);
+    emit("sub rsp, 8");
+    emit("mov rax, 0");
+    emit("call %s", node->funcname);
+    emit("add rsp, 8");
+    p(".L.end.%d:", label_id);
     emit("push rax");
     return;
   }
