@@ -151,16 +151,16 @@ static void gen(Node *node) {
     const unsigned long label_id = generate_label_id();
     emit("mov rax, rsp");
     emit("and rax, 15");
-    emit("jnz .L.call.%d", label_id);
+    emit("jnz .L.call.%ld", label_id);
     emit("mov rax, 0");
     emit("call %s", node->funcname);
-    emit("jmp .L.end.%d", label_id);
-    p(".L.call.%d:", label_id);
+    emit("jmp .L.end.%ld", label_id);
+    p(".L.call.%ld:", label_id);
     emit("sub rsp, 8");
     emit("mov rax, 0");
     emit("call %s", node->funcname);
     emit("add rsp, 8");
-    p(".L.end.%d:", label_id);
+    p(".L.end.%ld:", label_id);
     emit("push rax");
     return;
   }
