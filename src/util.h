@@ -1,5 +1,5 @@
-#ifndef _VECTOR_H_INCLUDED
-#define _VECTOR_H_INCLUDED
+#ifndef _UTIL_H_INCLUDED
+#define _UTIL_H_INCLUDED
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -39,4 +39,4 @@ static inline void* vector_at(Vector *vector, size_t index) {
   return vector->data[index];
 }
 
-#endif // #ifndef _VECTOR_H_INCLUDED 
+#endif // #ifndef _UTIL_H_INCLUDED 

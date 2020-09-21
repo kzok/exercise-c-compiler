@@ -8,7 +8,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "./vector.h"
+#include "./util.h"
 
 #ifdef ENTRYPOINT
 #  define EXTERN extern
