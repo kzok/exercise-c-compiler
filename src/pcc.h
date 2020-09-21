@@ -8,7 +8,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "./vector.h"
+#include "./util.h"
 
 #ifdef ENTRYPOINT
 #  define EXTERN extern
@@ -16,7 +16,7 @@
 #  define EXTERN
 #endif
 
-#ifndef NDEBUG
+#ifdef DEBUG
 # define DEBUGF(...) \
   do {fprintf(stderr, "[DEBUG] ");fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
 #else
@@ -84,6 +84,7 @@ Token *tokenize(char* p);
    XX(ND_WHILE) /** while 文 */ \
    XX(ND_FOR) /** for 文 */ \
    XX(ND_BLOCK) /** block */ \
+   XX(ND_FUNCALL) /** 関数呼出 */ \
 
 typedef enum {
 #define XX(name) name,
@@ -117,6 +118,10 @@ struct Node {
 
   // ND_BLOCK
   Vector* children;
+
+  // ND_FUNCALL
+  char *funcname;
+  Vector* funcargs;
 };
 
 void program();

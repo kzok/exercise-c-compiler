@@ -14,15 +14,8 @@ static const char *const SIGNES[] = {
   ">=", "<=",
   ">", "<", "(", ")", "{", "}",
   "+", "-", "*", "/",
-  ";", "="
+  ";", "=", ",",
 };
-
-static bool is_alnum(char c) {
-  return
-    ('a' <= c && c <= 'z') ||
-    ('A' <= c && c <= 'Z') ||
-    (c == '_');
-}
 
 // 新しいトークンを作成して cur に繋げる
 static Token *new_token(
@@ -80,7 +73,7 @@ static bool consume_as_ident(
   char *str = ctx->p;
   size_t len = 0;
   while (*ctx->p) {
-    if (is_alnum(*ctx->p)) {
+    if (isalnum(*ctx->p)) {
       len += 1;
       ctx->p += 1;
     } else {
@@ -128,7 +121,7 @@ static bool consume_as_reserved(
   assert(ctx->cur != NULL);
 
   const size_t len = strlen(str);
-  if (strncmp(ctx->p, str, len) == 0 && !is_alnum((ctx->p)[len])) {
+  if (strncmp(ctx->p, str, len) == 0 && !isalnum((ctx->p)[len])) {
     ctx->cur = new_token(kind, ctx->cur, ctx->p, len);
     ctx->p += len;
     return true;

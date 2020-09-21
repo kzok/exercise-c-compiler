@@ -6,6 +6,7 @@
 #define emit(...) do {printf("\t");p(__VA_ARGS__)} while(0);
 
 static unsigned long g_label_count = 0;
+static const char *arg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 static unsigned long generate_label_id() {
   return ++g_label_count;
@@ -124,6 +125,26 @@ static void gen(Node *node) {
     emit("pop rax");
     emit("mov [rax], rdi");
     emit("push rdi");
+    return;
+  }
+
+  // function call
+  if (node->kind == ND_FUNCALL) {
+    assert(node->funcname != NULL);
+    assert(node->funcargs != NULL);
+
+    int arg_count = 0;
+    for (; arg_count < node->funcargs->length; arg_count += 1) {
+      Node *arg = vector_at(node->funcargs, arg_count);
+      gen(arg);
+    }
+    // 6 個までの引数しか対応していないため
+    assert(arg_count <= sizeof(arg_regs)/sizeof(arg_regs[0]));
+    for (int i = arg_count - 1; i >= 0; i -= 1) {
+      emit("pop %s", arg_regs[i]);
+    }
+    emit("call %s", node->funcname);
+    emit("push rax");
     return;
   }
 
