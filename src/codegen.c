@@ -224,7 +224,7 @@ void codegen() {
 
   // プロローグ
   // 変数分の領域を確保する
-  const int localsSize = g_locals == NULL ? 0 : g_locals->offset + 8;
+  const int localsSize = vector_empty(g_locals) ? 0 : ((LVar*)vector_last(g_locals))->offset + 8;
   DEBUGF("total size of local variables: %d bytes\n", localsSize);
   emit("push rbp");
   emit("mov rbp, rsp");

@@ -117,27 +117,24 @@ struct Node {
   Node *inc;
 
   // ND_BLOCK
-  Vector* children;
+  Vector* children; // Vector<Node>
 
   // ND_FUNCALL
   char *funcname;
-  Vector* funcargs;
+  Vector* funcargs; // Vector<Node>
 };
 
 void program();
 
 // ローカル変数の型
-typedef struct LVar LVar;
-struct LVar {
-  // 次の変数か NULL
-  LVar *next;
+typedef struct {
   // 変数の名前
   char *name;
   // 名前の長さ
   int len;
   // RBP からのオフセット
   int offset;
-};
+} LVar;
 
 /**
  * codegen.c
@@ -156,7 +153,7 @@ EXTERN char *g_user_input;
 // 生成された構文木
 EXTERN Node *g_code[100];
 // ローカル変数
-EXTERN LVar *g_locals;
+EXTERN Vector *g_locals; // Vector<LVar>
 
 /**
  * インライン関数

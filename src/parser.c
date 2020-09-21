@@ -94,13 +94,25 @@ static Node *new_node_num(int val) {
 // 変数を名前で検索する。見つからなかった場合は NULL を返す。
 static LVar *find_lvar(Token *tok) {
   assert(tok != NULL);
+  assert(g_locals != NULL);
 
-  for (LVar *var = g_locals; var; var = var->next) {
+  for (size_t i = 0; i < g_locals->length; i += 1) {
+    LVar *var = vector_at(g_locals, i);
     if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
       return var;
     }
   }
   return NULL;
+}
+
+static LVar *new_lvar(Token *token) {
+  assert(g_locals != NULL);
+  LVar *lvar = calloc(1, sizeof(LVar));
+  lvar->name = token->str;
+  lvar->len = token->len;
+  // 今は int 型しかないので 8 バイト固定
+  lvar->offset = vector_empty(g_locals) ? 0 : ((LVar*)vector_last(g_locals))->offset + 8;
+  return lvar;
 }
 
 /**
@@ -142,14 +154,9 @@ static Node *primary() {
     if (lvar) {
       node->offset = lvar->offset;
     } else {
-      lvar = calloc(1, sizeof(LVar));
-      lvar->next = g_locals;
-      lvar->name = token->str;
-      lvar->len = token->len;
-      // 今は int 型しかないので 8 バイト固定
-      lvar->offset = g_locals == NULL ? 0 : g_locals->offset + 8;
+      lvar = new_lvar(token);
       node->offset = lvar->offset;
-      g_locals = lvar;
+      vector_push(g_locals, lvar);
     }
     return node;
   }
