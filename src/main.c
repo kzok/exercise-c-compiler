@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   }
 
   g_user_input = argv[1];
-  g_token = tokenize(g_user_input);
+  g_tokens = tokenize(g_user_input);
   codegen(program());
   return 0;
 }

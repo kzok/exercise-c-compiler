@@ -153,7 +153,7 @@ void codegen(Vector *functions);
  */
 
 // 現在着目しているトークン
-EXTERN Token *g_token;
+EXTERN Token *g_tokens;
 // 入力プログラム
 EXTERN char *g_user_input;
 

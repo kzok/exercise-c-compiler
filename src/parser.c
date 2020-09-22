@@ -7,22 +7,22 @@
 static Vector *g_locals = NULL; // Vector<LVar>
 
 static void seek_token() {
-  assert(g_token != NULL);
-  g_token = g_token->next;
+  assert(g_tokens != NULL);
+  g_tokens = g_tokens->next;
 }
 
 // 次のトークンが期待している記号のときには、トークンを一つ読み進める。
 // それ以外の場合にはエラーを報告する。
 static void expect(char *op) {
   assert(op != NULL);
-  assert(g_token != NULL);
+  assert(g_tokens != NULL);
 
   if (
-    g_token->kind != TK_SIGN
-    || g_token->len != strlen(op)
-    || memcmp(g_token->str, op, g_token->len)
+    g_tokens->kind != TK_SIGN
+    || g_tokens->len != strlen(op)
+    || memcmp(g_tokens->str, op, g_tokens->len)
   ) {
-    error_at(g_token->str, "'%s' ではありません", op);
+    error_at(g_tokens->str, "'%s' ではありません", op);
   }
   seek_token();
 }
@@ -30,12 +30,12 @@ static void expect(char *op) {
 // 次のトークンが数値の場合、トークンを一つ読み進めてその数値を返す。
 // それ以外の場合にはエラーを報告する。
 static int expect_number() {
-  assert(g_token != NULL);
+  assert(g_tokens != NULL);
 
-  if (g_token->kind != TK_NUM) {
-    error_at(g_token->str, "数ではありません");
+  if (g_tokens->kind != TK_NUM) {
+    error_at(g_tokens->str, "数ではありません");
   }
-  int val = g_token->val;
+  int val = g_tokens->val;
   seek_token();
   return val;
 }
@@ -44,18 +44,18 @@ static int expect_number() {
  * @return ident string
  */
 static char* expect_ident() {
-  assert(g_token != NULL);
-  if (g_token->kind != TK_IDENT) {
-    error_at(g_token->str, "識別子ではありません");
+  assert(g_tokens != NULL);
+  if (g_tokens->kind != TK_IDENT) {
+    error_at(g_tokens->str, "識別子ではありません");
   }
-  char *ident = strndup(g_token->str, g_token->len);
+  char *ident = strndup(g_tokens->str, g_tokens->len);
   seek_token();
   return ident;
 }
 
 static bool at_eof() {
-  assert(g_token != NULL);
-  return g_token->kind == TK_EOF;
+  assert(g_tokens != NULL);
+  return g_tokens->kind == TK_EOF;
 }
 
 // 次のトークンが期待している記号のときには、トークンを一つ読み進めて真を返す。
@@ -64,9 +64,9 @@ static bool consume_as_sign(char *op) {
   assert(op != NULL);
 
   if (
-      g_token->kind != TK_SIGN ||
-      g_token->len != strlen(op) ||
-      memcmp(g_token->str, op, g_token->len)
+      g_tokens->kind != TK_SIGN ||
+      g_tokens->len != strlen(op) ||
+      memcmp(g_tokens->str, op, g_tokens->len)
   ) {
     return false;
   }
@@ -78,12 +78,12 @@ static bool consume_as_sign(char *op) {
 // トークンを一つ読み進めて現在のトークンを返す
 // そうでなければ NULL ポインタを返す
 static Token *consume_token_kind(TokenKind kind) {
-  assert(g_token != NULL);
+  assert(g_tokens != NULL);
 
-  if (g_token->kind != kind) {
+  if (g_tokens->kind != kind) {
     return NULL;
   }
-  Token *current = g_token;
+  Token *current = g_tokens;
   seek_token();
   return current;
 }
