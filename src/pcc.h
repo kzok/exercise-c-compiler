@@ -18,7 +18,9 @@
 
 #ifdef DEBUG
 # define DEBUGF(...) \
-  do {fprintf(stderr, "[DEBUG] ");fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
+  do {fprintf(stderr, "[DEBUG] (%s:%d) ", __FILENAME__, __LINE__); \
+    fprintf(stderr, __VA_ARGS__);fflush(stderr); \
+  } while(0);
 #else
 # define DEBUGF(fmt, ...)
 #endif
