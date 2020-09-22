@@ -9,12 +9,7 @@
 - [9cc](https://github.com/rui314/9cc)
 - [chibicc](https://github.com/rui314/chibicc)
 
-## 目的
-
-- 実際に作ってみて構文解析（≒AST）のしくみを理解する
-- アセンブリ言語に対する苦手意識を減らす
-
-## 使い方
+## ビルドおよびテスト
 
 ※ Linux/x86-64 でのみ動きます
 ※ vscode を使う場合は拡張機能 "Remote - Containers" で開発環境を整えられます
