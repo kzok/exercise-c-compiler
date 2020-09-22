@@ -3,6 +3,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+// ローカル変数
+static Vector *g_locals = NULL; // Vector<LVar>
+
 static void seek_token() {
   assert(g_token != NULL);
   g_token = g_token->next;
@@ -22,6 +25,32 @@ static void expect(char *op) {
     error_at(g_token->str, "'%s' ではありません", op);
   }
   seek_token();
+}
+
+// 次のトークンが数値の場合、トークンを一つ読み進めてその数値を返す。
+// それ以外の場合にはエラーを報告する。
+static int expect_number() {
+  assert(g_token != NULL);
+
+  if (g_token->kind != TK_NUM) {
+    error_at(g_token->str, "数ではありません");
+  }
+  int val = g_token->val;
+  seek_token();
+  return val;
+}
+
+/**
+ * @return ident string
+ */
+static char* expect_ident() {
+  assert(g_token != NULL);
+  if (g_token->kind != TK_IDENT) {
+    error_at(g_token->str, "識別子ではありません");
+  }
+  char *ident = strndup(g_token->str, g_token->len);
+  seek_token();
+  return ident;
 }
 
 static bool at_eof() {
@@ -59,20 +88,8 @@ static Token *consume_token_kind(TokenKind kind) {
   return current;
 }
 
-// 次のトークンが数値の場合、トークンを一つ読み進めてその数値を返す。
-// それ以外の場合にはエラーを報告する。
-static int expect_number() {
-  assert(g_token != NULL);
-
-  if (g_token->kind != TK_NUM) {
-    error_at(g_token->str, "数ではありません");
-  }
-  int val = g_token->val;
-  seek_token();
-  return val;
-}
-
 static Node *new_node(NodeKind kind) {
+  DEBUGF("new node: %s\n", node_kind_str(kind));
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
   return node;
@@ -323,11 +340,34 @@ static Node *stmt() {
   return node;
 }
 
-void program() {
-  int i = 0;
-  while (!at_eof()) {
-    g_code[i] = stmt();
-    i += 1;
+static Function *function() {
+  assert(g_locals == NULL);
+  g_locals = vector_new();
+
+  Function *fn = calloc(1, sizeof(Function));
+  fn->name = expect_ident();
+  fn->body = vector_new();
+  expect("(");
+  expect(")");
+  expect("{");
+  while (!consume_as_sign("}")) {
+    vector_push(fn->body, stmt());
   }
-  g_code[i] = NULL;
+  fn->locals = g_locals;
+  g_locals = NULL;
+
+  return fn;
+}
+
+/**
+ * @returns Vector<Function>
+ */
+Vector *program() {
+  Vector *functions = vector_new();
+
+  while (!at_eof()) {
+    vector_push(functions, function()); 
+  }
+
+  return functions;
 }

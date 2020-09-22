@@ -37,6 +37,7 @@
 
 ```
 program    = stmt*
+function  = ident "(" ")" "{" stmt* "}"
 stmt       = expr ";"
            | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?
@@ -51,7 +52,7 @@ add        = mul ("+" mul | "-" mul)*
 mul        = unary ("*" unary | "/" unary)*
 unary      = ("+" | "-")? primary
 primary    = num
-           | ident func-args?
+           | ident callargs?
            | "(" expr ")"
-func-args  = "(" (assign, ("," assign)*)? ")"
+callargs  = "(" (assign ("," assign)*)? ")"
 ```

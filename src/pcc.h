@@ -124,7 +124,7 @@ struct Node {
   Vector* funcargs; // Vector<Node>
 };
 
-void program();
+Vector *program();
 
 // ローカル変数の型
 typedef struct {
@@ -136,11 +136,17 @@ typedef struct {
   int offset;
 } LVar;
 
+typedef struct {
+  const char *name;
+  Vector *body; // Vector<Node>
+  Vector *locals; // Vector<LVar>
+} Function;
+
 /**
  * codegen.c
  */
 
-void codegen();
+void codegen(Vector *functions);
 
 /**
  * グローバル変数
@@ -150,10 +156,6 @@ void codegen();
 EXTERN Token *g_token;
 // 入力プログラム
 EXTERN char *g_user_input;
-// 生成された構文木
-EXTERN Node *g_code[100];
-// ローカル変数
-EXTERN Vector *g_locals; // Vector<LVar>
 
 /**
  * インライン関数

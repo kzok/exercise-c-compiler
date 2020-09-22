@@ -216,33 +216,46 @@ static void gen(Node *node) {
   emit("push rax");
 }
 
-void codegen() {
+/**
+ * @param functions Vector<Function>
+ */
+void codegen(Vector *functions) {
+  assert(functions != NULL);
   // アセンブリの前半部分を出力
   p(".intel_syntax noprefix");
-  p(".global main");
-  p("main:");
 
-  // プロローグ
-  // 変数分の領域を確保する
-  const int localsSize = vector_empty(g_locals) ? 0 : ((LVar*)vector_last(g_locals))->offset + 8;
-  DEBUGF("total size of local variables: %d bytes\n", localsSize);
-  emit("push rbp");
-  emit("mov rbp, rsp");
-  emit("sub rsp, %d", localsSize);
+  for (int fi = 0; fi < functions->length; fi += 1) {
+    Function *fn = vector_at(functions, fi);
+    assert(fn != NULL);
+    assert(fn->name != NULL);
+    assert(fn->body != NULL);
+    assert(fn->locals != NULL);
 
-  // 先頭の式から順にコード生成
-  for (int i = 0; g_code[i]; i++) {
-    DEBUGF("program line #%d\n", i);
-    gen(g_code[i]);
+    // プロローグ
+    DEBUGF("codegen of %s()\n", fn->name);
+    p(".global %s", fn->name);
+    p("%s:", fn->name);
+
+    // 変数分の領域を確保する
+    const int localsSize = vector_empty(fn->locals) ? 0 : ((LVar*)vector_last(fn->locals))->offset + 8;
+    DEBUGF("local variables: %d bytes\n", localsSize);
+    emit("push rbp");
+    emit("mov rbp, rsp");
+    emit("sub rsp, %d", localsSize);
+
+    for (int ni = 0; ni < fn->body->length; ni += 1) {
+      Node *node = vector_at(fn->body, ni);
+      gen(node);
+    }
 
     // 式の評価結果としてスタックに一つの値が残っている
     // はずなので、スタックが溢れないようにポップしておく
     emit("pop rax");
-  }
 
-  // エピローグ
-  // 最後の式の結果が rax に残っているのでそれが戻り値になる
-  emit("mov rsp, rbp");
-  emit("pop rbp");
-  emit("ret");
+    // エピローグ
+    // 最後の式の結果が rax に残っているのでそれが戻り値になる
+    emit("mov rsp, rbp");
+    emit("pop rbp");
+    emit("ret");
+  }
 }
