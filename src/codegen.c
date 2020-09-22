@@ -28,7 +28,7 @@ static void gen(Node *node) {
   // block
   if (node->kind == ND_BLOCK) {
     assert(node->children != NULL);
-    for (size_t i = 0; i < node->children->length; i += 1) {
+    for (int i = 0; i < node->children->length; i += 1) {
       gen((Node*)vector_at(node->children, i));
       // 式の評価結果としてスタックに一つの値が残っている
       // はずなので、スタックが溢れないようにポップしておく
