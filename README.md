@@ -31,8 +31,8 @@
 ## 現時点での文法
 
 ```
-program    = stmt*
-function  = ident "(" ")" "{" stmt* "}"
+program    = function*
+function  = ident "(" (ident ("," ident)*)? ")" "{" stmt* "}"
 stmt       = expr ";"
            | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?
