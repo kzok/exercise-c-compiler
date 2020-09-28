@@ -10,19 +10,13 @@ cd $(dirname $0)
 
 cd ./out
 
-cat <<EOF | gcc -xc -c -o tmp2.o -
-int add(int a, int b) {return a + b;}
-int sub(int a, int b) {return a - b;}
-int sum6(int a, int b, int c, int d, int e, int f) {return a + b + c + d + e + f;}
-EOF
-
 try() {
 	expected="$1"
 	input="$2"
 
 	set +e
 	./pcc "$input" > tmp.s
-	gcc -o tmp tmp.s tmp2.o
+	gcc -o tmp tmp.s
 	./tmp
 	actual="$?"
 	set -e
@@ -84,12 +78,11 @@ try 5 "main() { a=0; for(a=9;a>5;a=a-1) a; }"
 # block
 try 3 "main() { a=0; if(1){a=a+1; a=a+2;} else a=9; return a; }"
 
-# external function call
-try 3 "main() { return add(1, 2); }"
-try 5 "main() { return sub(8, 3); }"
-try 21 "main() { return sum6(1,2,3,4,5,6); }"
-
-# argument-less internal function definition
+# function call and definition
 try 32 "main() { return ret32(); } ret32() { 32; }"
+try 1 "main() { return ret(1); } ret(x) { return x; }"
+try 7 'main() { return add2(3,4); } add2(x,y) { return x+y; }'
+try 1 'main() { return sub2(4,3); } sub2(x,y) { return x-y; }'
+try 55 'main() { return fib(9); } fib(x) { if (x<=1) return 1; return fib(x-1) + fib(x-2); }'
 
 echo -e '\e[32mAll tests passed!\e[0m'

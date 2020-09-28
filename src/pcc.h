@@ -132,8 +132,6 @@ Vector *program();
 typedef struct {
   // 変数の名前
   char *name;
-  // 名前の長さ
-  int len;
   // RBP からのオフセット
   int offset;
 } LVar;
@@ -141,6 +139,7 @@ typedef struct {
 typedef struct {
   const char *name;
   Vector *body; // Vector<Node>
+  Vector *params; // Vector<LVar>
   Vector *locals; // Vector<LVar>
 } Function;
 

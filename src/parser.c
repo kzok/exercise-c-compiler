@@ -115,20 +115,21 @@ static LVar *find_lvar(Token *tok) {
 
   for (size_t i = 0; i < g_locals->length; i += 1) {
     LVar *var = vector_at(g_locals, i);
-    if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+    size_t len = strlen(var->name);
+    if (len == tok->len && !memcmp(tok->str, var->name, len)) {
       return var;
     }
   }
   return NULL;
 }
 
-static LVar *new_lvar(Token *token) {
+static LVar *new_lvar(char *str) {
   assert(g_locals != NULL);
   LVar *lvar = calloc(1, sizeof(LVar));
-  lvar->name = token->str;
-  lvar->len = token->len;
+  lvar->name = str;
   // 今は int 型しかないので 8 バイト固定
-  lvar->offset = vector_empty(g_locals) ? 0 : ((LVar*)vector_last(g_locals))->offset + 8;
+  lvar->offset = vector_empty(g_locals) ? 8 : ((LVar*)vector_last(g_locals))->offset + 8;
+  vector_push(g_locals, lvar);
   return lvar;
 }
 
@@ -171,9 +172,8 @@ static Node *primary() {
     if (lvar) {
       node->offset = lvar->offset;
     } else {
-      lvar = new_lvar(token);
+      lvar = new_lvar(strndup(token->str, token->len));
       node->offset = lvar->offset;
-      vector_push(g_locals, lvar);
     }
     return node;
   }
@@ -340,6 +340,25 @@ static Node *stmt() {
   return node;
 }
 
+/**
+ * @return Vector<LVar>
+ */
+static Vector *function_params() {
+  Vector *params = vector_new();
+
+  expect("(");
+  if (consume_as_sign(")")){
+    return params;
+  }
+  vector_push(params, new_lvar(expect_ident()));
+  while (consume_as_sign(",")) {
+    vector_push(params, new_lvar(expect_ident()));
+  }
+  expect(")");
+
+  return params;
+}
+
 static Function *function() {
   assert(g_locals == NULL);
   g_locals = vector_new();
@@ -347,8 +366,9 @@ static Function *function() {
   Function *fn = calloc(1, sizeof(Function));
   fn->name = expect_ident();
   fn->body = vector_new();
-  expect("(");
-  expect(")");
+
+  fn->params = function_params();
+
   expect("{");
   while (!consume_as_sign("}")) {
     vector_push(fn->body, stmt());

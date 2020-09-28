@@ -6,7 +6,8 @@
 #define emit(...) do {printf("\t");p(__VA_ARGS__)} while(0);
 
 static unsigned long g_label_count = 0;
-static const char *arg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static const char *argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static const size_t MAX_ARGS = sizeof(argregs) / sizeof(argregs[0]);
 
 static unsigned long generate_label_id() {
   return ++g_label_count;
@@ -139,9 +140,9 @@ static void gen(Node *node) {
       gen(arg);
     }
     // 6 個までの引数しか対応していないため
-    assert(arg_count <= sizeof(arg_regs)/sizeof(arg_regs[0]));
+    assert(arg_count <= MAX_ARGS);
     for (int i = arg_count - 1; i >= 0; i -= 1) {
-      emit("pop %s", arg_regs[i]);
+      emit("pop %s", argregs[i]);
     }
 
     /**
@@ -229,6 +230,7 @@ void codegen(Vector *functions) {
     assert(fn != NULL);
     assert(fn->name != NULL);
     assert(fn->body != NULL);
+    assert(fn->params != NULL);
     assert(fn->locals != NULL);
 
     // プロローグ
@@ -243,8 +245,16 @@ void codegen(Vector *functions) {
     emit("mov rbp, rsp");
     emit("sub rsp, %d", localsSize);
 
-    for (int ni = 0; ni < fn->body->length; ni += 1) {
-      Node *node = vector_at(fn->body, ni);
+    // 引数をスタックに展開
+    assert(fn->params->length <= MAX_ARGS);
+    for (int pi = 0; pi < fn->params->length; pi += 1) {
+      LVar *param = vector_at(fn->params, pi);
+      emit("mov [rbp-%d], %s", param->offset, argregs[pi]);
+    }
+
+    // コード生成
+    for (int bi = 0; bi < fn->body->length; bi += 1) {
+      Node *node = vector_at(fn->body, bi);
       gen(node);
     }
 
