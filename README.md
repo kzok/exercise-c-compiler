@@ -9,12 +9,7 @@
 - [9cc](https://github.com/rui314/9cc)
 - [chibicc](https://github.com/rui314/chibicc)
 
-## 目的
-
-- 実際に作ってみて構文解析（≒AST）のしくみを理解する
-- アセンブリ言語に対する苦手意識を減らす
-
-## 使い方
+## ビルドおよびテスト
 
 ※ Linux/x86-64 でのみ動きます
 ※ vscode を使う場合は拡張機能 "Remote - Containers" で開発環境を整えられます
@@ -36,7 +31,8 @@
 ## 現時点での文法
 
 ```
-program    = stmt*
+program    = function*
+function  = ident "(" (ident ("," ident)*)? ")" "{" stmt* "}"
 stmt       = expr ";"
            | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?
@@ -51,7 +47,7 @@ add        = mul ("+" mul | "-" mul)*
 mul        = unary ("*" unary | "/" unary)*
 unary      = ("+" | "-")? primary
 primary    = num
-           | ident func-args?
+           | ident callargs?
            | "(" expr ")"
-func-args  = "(" (assign, ("," assign)*)? ")"
+callargs  = "(" (assign ("," assign)*)? ")"
 ```

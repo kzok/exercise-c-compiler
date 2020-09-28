@@ -6,7 +6,8 @@
 #define emit(...) do {printf("\t");p(__VA_ARGS__)} while(0);
 
 static unsigned long g_label_count = 0;
-static const char *arg_regs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static const char *argregs[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+static const size_t MAX_ARGS = sizeof(argregs) / sizeof(argregs[0]);
 
 static unsigned long generate_label_id() {
   return ++g_label_count;
@@ -28,7 +29,7 @@ static void gen(Node *node) {
   // block
   if (node->kind == ND_BLOCK) {
     assert(node->children != NULL);
-    for (size_t i = 0; i < node->children->length; i += 1) {
+    for (int i = 0; i < node->children->length; i += 1) {
       gen((Node*)vector_at(node->children, i));
       // 式の評価結果としてスタックに一つの値が残っている
       // はずなので、スタックが溢れないようにポップしておく
@@ -139,11 +140,28 @@ static void gen(Node *node) {
       gen(arg);
     }
     // 6 個までの引数しか対応していないため
-    assert(arg_count <= sizeof(arg_regs)/sizeof(arg_regs[0]));
+    assert(arg_count <= MAX_ARGS);
     for (int i = arg_count - 1; i >= 0; i -= 1) {
-      emit("pop %s", arg_regs[i]);
+      emit("pop %s", argregs[i]);
     }
+
+    /**
+     * @see https://github.com/rui314/chibicc/commit/ee42303
+     * 関数呼出の前に RSP の値が 16 の倍数でなければならないためそのための対応をする
+     */
+    const unsigned long label_id = generate_label_id();
+    emit("mov rax, rsp");
+    emit("and rax, 15");
+    emit("jnz .L.call.%ld", label_id);
+    emit("mov rax, 0");
     emit("call %s", node->funcname);
+    emit("jmp .L.end.%ld", label_id);
+    p(".L.call.%ld:", label_id);
+    emit("sub rsp, 8");
+    emit("mov rax, 0");
+    emit("call %s", node->funcname);
+    emit("add rsp, 8");
+    p(".L.end.%ld:", label_id);
     emit("push rax");
     return;
   }
@@ -199,33 +217,55 @@ static void gen(Node *node) {
   emit("push rax");
 }
 
-void codegen() {
+/**
+ * @param functions Vector<Function>
+ */
+void codegen(Vector *functions) {
+  assert(functions != NULL);
   // アセンブリの前半部分を出力
   p(".intel_syntax noprefix");
-  p(".global main");
-  p("main:");
 
-  // プロローグ
-  // 変数分の領域を確保する
-  const int localsSize = g_locals == NULL ? 0 : g_locals->offset + 8;
-  DEBUGF("total size of local variables: %d bytes\n", localsSize);
-  emit("push rbp");
-  emit("mov rbp, rsp");
-  emit("sub rsp, %d", localsSize);
+  for (int fi = 0; fi < functions->length; fi += 1) {
+    Function *fn = vector_at(functions, fi);
+    assert(fn != NULL);
+    assert(fn->name != NULL);
+    assert(fn->body != NULL);
+    assert(fn->params != NULL);
+    assert(fn->locals != NULL);
 
-  // 先頭の式から順にコード生成
-  for (int i = 0; g_code[i]; i++) {
-    DEBUGF("program line #%d\n", i);
-    gen(g_code[i]);
+    // プロローグ
+    DEBUGF("codegen of %s()\n", fn->name);
+    p(".global %s", fn->name);
+    p("%s:", fn->name);
+
+    // 変数分の領域を確保する
+    const int localsSize = vector_empty(fn->locals) ? 0 : ((LVar*)vector_last(fn->locals))->offset + 8;
+    DEBUGF("local variables: %d bytes\n", localsSize);
+    emit("push rbp");
+    emit("mov rbp, rsp");
+    emit("sub rsp, %d", localsSize);
+
+    // 引数をスタックに展開
+    assert(fn->params->length <= MAX_ARGS);
+    for (int pi = 0; pi < fn->params->length; pi += 1) {
+      LVar *param = vector_at(fn->params, pi);
+      emit("mov [rbp-%d], %s", param->offset, argregs[pi]);
+    }
+
+    // コード生成
+    for (int bi = 0; bi < fn->body->length; bi += 1) {
+      Node *node = vector_at(fn->body, bi);
+      gen(node);
+    }
 
     // 式の評価結果としてスタックに一つの値が残っている
     // はずなので、スタックが溢れないようにポップしておく
     emit("pop rax");
-  }
 
-  // エピローグ
-  // 最後の式の結果が rax に残っているのでそれが戻り値になる
-  emit("mov rsp, rbp");
-  emit("pop rbp");
-  emit("ret");
+    // エピローグ
+    // 最後の式の結果が rax に残っているのでそれが戻り値になる
+    emit("mov rsp, rbp");
+    emit("pop rbp");
+    emit("ret");
+  }
 }

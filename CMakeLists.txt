@@ -14,6 +14,7 @@ project(pcc)
 
 # NOTE: comment out if you want to see DEBUGF()
 # add_compile_definitions(DEBUG)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D__FILENAME__='\"$(subst ${CMAKE_SOURCE_DIR}/,,$(abspath $<))\"'")
 
 file(GLOB_RECURSE source_files src/*.c)
 add_executable(${PROJECT_NAME} ${source_files})

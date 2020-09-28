@@ -18,7 +18,9 @@
 
 #ifdef DEBUG
 # define DEBUGF(...) \
-  do {fprintf(stderr, "[DEBUG] ");fprintf(stderr, __VA_ARGS__);fflush(stderr);} while(0);
+  do {fprintf(stderr, "[DEBUG] (%s:%d) ", __FILENAME__, __LINE__); \
+    fprintf(stderr, __VA_ARGS__);fflush(stderr); \
+  } while(0);
 #else
 # define DEBUGF(fmt, ...)
 #endif
@@ -117,46 +119,44 @@ struct Node {
   Node *inc;
 
   // ND_BLOCK
-  Vector* children;
+  Vector* children; // Vector<Node>
 
   // ND_FUNCALL
   char *funcname;
-  Vector* funcargs;
+  Vector* funcargs; // Vector<Node>
 };
 
-void program();
+Vector *program();
 
 // ローカル変数の型
-typedef struct LVar LVar;
-struct LVar {
-  // 次の変数か NULL
-  LVar *next;
+typedef struct {
   // 変数の名前
   char *name;
-  // 名前の長さ
-  int len;
   // RBP からのオフセット
   int offset;
-};
+} LVar;
+
+typedef struct {
+  const char *name;
+  Vector *body; // Vector<Node>
+  Vector *params; // Vector<LVar>
+  Vector *locals; // Vector<LVar>
+} Function;
 
 /**
  * codegen.c
  */
 
-void codegen();
+void codegen(Vector *functions);
 
 /**
  * グローバル変数
  */
 
 // 現在着目しているトークン
-EXTERN Token *g_token;
+EXTERN Token *g_tokens;
 // 入力プログラム
 EXTERN char *g_user_input;
-// 生成された構文木
-EXTERN Node *g_code[100];
-// ローカル変数
-EXTERN LVar *g_locals;
 
 /**
  * インライン関数

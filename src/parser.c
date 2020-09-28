@@ -3,30 +3,59 @@
 #include <stdbool.h>
 #include <string.h>
 
+// ローカル変数
+static Vector *g_locals = NULL; // Vector<LVar>
+
 static void seek_token() {
-  assert(g_token != NULL);
-  g_token = g_token->next;
+  assert(g_tokens != NULL);
+  g_tokens = g_tokens->next;
 }
 
 // 次のトークンが期待している記号のときには、トークンを一つ読み進める。
 // それ以外の場合にはエラーを報告する。
 static void expect(char *op) {
   assert(op != NULL);
-  assert(g_token != NULL);
+  assert(g_tokens != NULL);
 
   if (
-    g_token->kind != TK_SIGN
-    || g_token->len != strlen(op)
-    || memcmp(g_token->str, op, g_token->len)
+    g_tokens->kind != TK_SIGN
+    || g_tokens->len != strlen(op)
+    || memcmp(g_tokens->str, op, g_tokens->len)
   ) {
-    error_at(g_token->str, "'%s' ではありません", op);
+    error_at(g_tokens->str, "'%s' ではありません", op);
   }
   seek_token();
 }
 
+// 次のトークンが数値の場合、トークンを一つ読み進めてその数値を返す。
+// それ以外の場合にはエラーを報告する。
+static int expect_number() {
+  assert(g_tokens != NULL);
+
+  if (g_tokens->kind != TK_NUM) {
+    error_at(g_tokens->str, "数ではありません");
+  }
+  int val = g_tokens->val;
+  seek_token();
+  return val;
+}
+
+/**
+ * @return ident string
+ */
+static char* expect_ident() {
+  assert(g_tokens != NULL);
+  if (g_tokens->kind != TK_IDENT) {
+    error_at(g_tokens->str, "識別子ではありません");
+  }
+  char *ident = strndup(g_tokens->str, g_tokens->len);
+  seek_token();
+  return ident;
+}
+
 static bool at_eof() {
-  assert(g_token != NULL);
-  return g_token->kind == TK_EOF;
+  assert(g_tokens != NULL);
+  return g_tokens->kind == TK_EOF;
 }
 
 // 次のトークンが期待している記号のときには、トークンを一つ読み進めて真を返す。
@@ -35,9 +64,9 @@ static bool consume_as_sign(char *op) {
   assert(op != NULL);
 
   if (
-      g_token->kind != TK_SIGN ||
-      g_token->len != strlen(op) ||
-      memcmp(g_token->str, op, g_token->len)
+      g_tokens->kind != TK_SIGN ||
+      g_tokens->len != strlen(op) ||
+      memcmp(g_tokens->str, op, g_tokens->len)
   ) {
     return false;
   }
@@ -49,30 +78,18 @@ static bool consume_as_sign(char *op) {
 // トークンを一つ読み進めて現在のトークンを返す
 // そうでなければ NULL ポインタを返す
 static Token *consume_token_kind(TokenKind kind) {
-  assert(g_token != NULL);
+  assert(g_tokens != NULL);
 
-  if (g_token->kind != kind) {
+  if (g_tokens->kind != kind) {
     return NULL;
   }
-  Token *current = g_token;
+  Token *current = g_tokens;
   seek_token();
   return current;
 }
 
-// 次のトークンが数値の場合、トークンを一つ読み進めてその数値を返す。
-// それ以外の場合にはエラーを報告する。
-static int expect_number() {
-  assert(g_token != NULL);
-
-  if (g_token->kind != TK_NUM) {
-    error_at(g_token->str, "数ではありません");
-  }
-  int val = g_token->val;
-  seek_token();
-  return val;
-}
-
 static Node *new_node(NodeKind kind) {
+  DEBUGF("new node: %s\n", node_kind_str(kind));
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
   return node;
@@ -94,13 +111,26 @@ static Node *new_node_num(int val) {
 // 変数を名前で検索する。見つからなかった場合は NULL を返す。
 static LVar *find_lvar(Token *tok) {
   assert(tok != NULL);
+  assert(g_locals != NULL);
 
-  for (LVar *var = g_locals; var; var = var->next) {
-    if (var->len == tok->len && !memcmp(tok->str, var->name, var->len)) {
+  for (size_t i = 0; i < g_locals->length; i += 1) {
+    LVar *var = vector_at(g_locals, i);
+    size_t len = strlen(var->name);
+    if (len == tok->len && !memcmp(tok->str, var->name, len)) {
       return var;
     }
   }
   return NULL;
+}
+
+static LVar *new_lvar(char *str) {
+  assert(g_locals != NULL);
+  LVar *lvar = calloc(1, sizeof(LVar));
+  lvar->name = str;
+  // 今は int 型しかないので 8 バイト固定
+  lvar->offset = vector_empty(g_locals) ? 8 : ((LVar*)vector_last(g_locals))->offset + 8;
+  vector_push(g_locals, lvar);
+  return lvar;
 }
 
 /**
@@ -142,14 +172,8 @@ static Node *primary() {
     if (lvar) {
       node->offset = lvar->offset;
     } else {
-      lvar = calloc(1, sizeof(LVar));
-      lvar->next = g_locals;
-      lvar->name = token->str;
-      lvar->len = token->len;
-      // 今は int 型しかないので 8 バイト固定
-      lvar->offset = g_locals == NULL ? 0 : g_locals->offset + 8;
+      lvar = new_lvar(strndup(token->str, token->len));
       node->offset = lvar->offset;
-      g_locals = lvar;
     }
     return node;
   }
@@ -316,11 +340,54 @@ static Node *stmt() {
   return node;
 }
 
-void program() {
-  int i = 0;
-  while (!at_eof()) {
-    g_code[i] = stmt();
-    i += 1;
+/**
+ * @return Vector<LVar>
+ */
+static Vector *function_params() {
+  Vector *params = vector_new();
+
+  expect("(");
+  if (consume_as_sign(")")){
+    return params;
   }
-  g_code[i] = NULL;
+  vector_push(params, new_lvar(expect_ident()));
+  while (consume_as_sign(",")) {
+    vector_push(params, new_lvar(expect_ident()));
+  }
+  expect(")");
+
+  return params;
+}
+
+static Function *function() {
+  assert(g_locals == NULL);
+  g_locals = vector_new();
+
+  Function *fn = calloc(1, sizeof(Function));
+  fn->name = expect_ident();
+  fn->body = vector_new();
+
+  fn->params = function_params();
+
+  expect("{");
+  while (!consume_as_sign("}")) {
+    vector_push(fn->body, stmt());
+  }
+  fn->locals = g_locals;
+  g_locals = NULL;
+
+  return fn;
+}
+
+/**
+ * @returns Vector<Function>
+ */
+Vector *program() {
+  Vector *functions = vector_new();
+
+  while (!at_eof()) {
+    vector_push(functions, function()); 
+  }
+
+  return functions;
 }
