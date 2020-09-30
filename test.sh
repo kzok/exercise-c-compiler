@@ -1,6 +1,8 @@
 #!/bin/bash
 
 cd $(dirname $0)
+
+cargo test
 cargo build
 
 assert() {
@@ -22,5 +24,7 @@ assert() {
 
 assert 0 0
 assert 42 42
+
+assert 21 "5+20-4"
 
 echo OK
