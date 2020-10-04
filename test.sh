@@ -22,9 +22,11 @@ assert() {
   fi
 }
 
+echo "===== E2E testing ====="
+
 assert 0 0
 assert 42 42
 
 assert 21 "5+20-4"
 
-echo OK
+echo -e '\e[32mAll tests passed!\e[0m'
