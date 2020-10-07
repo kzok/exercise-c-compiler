@@ -4,7 +4,10 @@ use std::vec::{Vec};
 use tokenizer::{TokenKind, Token, tokenize};
 
 fn consume(token: &Token, c: char) -> bool {
-    token.kind == TokenKind::Reserved && token.substr == c.to_string()
+    match token.kind {
+        TokenKind::Reserved(t) => return t == c.to_string(),
+        _ => return false,
+    }
 }
 
 fn expect(token: &Token, c: char) {
