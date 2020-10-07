@@ -10,8 +10,10 @@ RUN apt -qq -y update && apt -qq -y install git build-essential
 
 # Rust
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc \
-  && echo 'rustup update && rustup component add rls rust-analysis rust-src' >> $HOME/.bashrc
+RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
+RUN source $HOME/.cargo/env \
+  && rustup update \
+  && rustup component add rls rust-analysis rust-src
 
 # /etc/bash.bashrc
 RUN touch /etc/bash.bashrc \
