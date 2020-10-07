@@ -1,7 +1,13 @@
 mod tokenizer;
 
-use std::vec::{Vec};
-use tokenizer::{TokenKind, Token, tokenize};
+use std::vec::Vec;
+use tokenizer::{tokenize, Token, TokenKind};
+
+fn report_parser_error(token: &Token, msg: &str) -> ! {
+    let loc = token.line_of_code;
+    let i = token.index + 1;
+    panic!("\n{0}\n{1:>2$} {3}\n", loc, '^', i, msg);
+}
 
 fn consume(token: &Token, c: char) -> bool {
     match token.kind {
@@ -14,7 +20,7 @@ fn expect(token: &Token, c: char) {
     if consume(&token, c) {
         return;
     }
-    panic!("'{}' ではありません", c);
+    report_parser_error(&token, &format!("'{}' ではありません", c));
 }
 
 fn expect_number(token: &Token) -> u32 {
@@ -22,7 +28,7 @@ fn expect_number(token: &Token) -> u32 {
         TokenKind::Number(n) => return n,
         _ => {}
     }
-    panic!("数ではありません");
+    report_parser_error(&token, "数ではありません");
 }
 
 fn main() {

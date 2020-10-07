@@ -1,5 +1,6 @@
 use std::vec::Vec;
 
+#[derive(Debug, PartialEq)]
 pub enum TokenKind<'a> {
     Reserved(&'a str),
     Number(u32),
@@ -7,49 +8,83 @@ pub enum TokenKind<'a> {
 
 pub struct Token<'a> {
     pub kind: TokenKind<'a>,
+    pub line_of_code: &'a str,
+    pub index: usize,
 }
 
-#[derive(Debug)]
 struct TokenizerContext<'a> {
-    rest_input: &'a str,
+    input: &'a str,
+    index: usize,
 }
 
 impl<'a> TokenizerContext<'a> {
-    pub const fn new(input: &'a str) -> TokenizerContext<'a> {
-        TokenizerContext {
-            rest_input: input,
-        }
+    pub fn new(input: &'a str) -> TokenizerContext {
+        TokenizerContext { input, index: 0 }
     }
 
-    pub const fn remains(&self) -> bool {
-        self.rest_input.len() != 0
+    pub fn rest_input(&self) -> &'a str {
+        return &self.input[self.index..];
+    }
+
+    pub fn remains(&self) -> bool {
+        return self.input.len() > self.index;
+    }
+
+    pub fn seek(&mut self, steps: usize) {
+        self.index += steps;
     }
 
     /// returns true if any whitespace skipped.
     pub fn skip_whitespace(&mut self) -> bool {
-        let original_length = self.rest_input.len();
-        self.rest_input = self.rest_input.trim_start();
-        return self.rest_input.len() < original_length;
-    }
+        let rest_input = self.rest_input();
 
-    pub fn consume(&mut self, s: &str) -> bool {
-        if self.rest_input.starts_with(s) {
-            self.rest_input = &self.rest_input[s.len()..];
-            return true;
+        let mut i: usize = 0;
+        while let Some(_) = rest_input.chars().nth(i).filter(|c| c.is_whitespace()) {
+            i += 1;
         }
-        return false;
+        self.seek(i);
+        return i > 0;
     }
 
-    pub fn consume_u32(&mut self) -> Option<u32> {
+    pub fn consume(&mut self, s: &'a str) -> Option<Token<'a>> {
+        let rest_input = self.rest_input();
+
+        if rest_input.starts_with(s) {
+            let result = Some(Token {
+                kind: TokenKind::Reserved(s),
+                line_of_code: self.input,
+                index: self.index,
+            });
+            self.seek(s.len());
+            return result;
+        }
+
+        return None;
+    }
+
+    pub fn consume_number(&mut self) -> Option<Token<'a>> {
+        let rest_input = self.rest_input();
         let mut num: Option<u32> = None;
         let mut i: usize = 0;
-        while let Some(n) = self.rest_input.chars().nth(i).and_then(|c| c.to_digit(10)) {
+        while let Some(n) = rest_input.chars().nth(i).and_then(|c| c.to_digit(10)) {
             num = num.map(|num| num * 10 + n).or_else(|| Some(n));
             i += 1;
         }
-        self.rest_input = &self.rest_input[i..];
-        return num;
+
+        let result = num.map(|n| Token {
+            kind: TokenKind::Number(n),
+            line_of_code: &self.input,
+            index: self.index,
+        });
+        self.seek(i);
+        return result;
     }
+}
+
+fn report_error(ctx: &TokenizerContext, msg: &str) -> ! {
+    let loc = ctx.input;
+    let i = ctx.index + 1;
+    panic!("\n{0}\n{1:>2$} {3}\n", loc, '^', i, msg);
 }
 
 pub fn tokenize<'a>(input: &'a str) -> Vec<Token<'a>> {
@@ -61,28 +96,22 @@ pub fn tokenize<'a>(input: &'a str) -> Vec<Token<'a>> {
             continue;
         }
 
-        if let Some(n) = ctx.consume_u32() {
-            tokens.push(Token {
-                kind: TokenKind::Number(n),
-            });
+        if let Some(token) = ctx.consume_number() {
+            tokens.push(token);
             continue;
         }
 
-        if ctx.consume("+") {
-            tokens.push(Token {
-                kind: TokenKind::Reserved("+"),
-            });
+        if let Some(token) = ctx.consume("+") {
+            tokens.push(token);
             continue;
         }
 
-        if ctx.consume("-") {
-            tokens.push(Token {
-                kind: TokenKind::Reserved("-"),
-            });
+        if let Some(token) = ctx.consume("-") {
+            tokens.push(token);
             continue;
         }
 
-        panic!("トークナイズ出来ません。\n{:?}", ctx);
+        report_error(&ctx, "トークナイズ出来ません。");
     }
 
     return tokens;
@@ -102,20 +131,36 @@ mod tests {
     #[test]
     fn test_skip_whitespace() {
         let mut ctx = TokenizerContext::new("   123");
-        ctx.skip_whitespace();
-        assert_eq!(ctx.rest_input, "123");
+        assert_eq!(ctx.skip_whitespace(), true);
+        assert_eq!(ctx.rest_input(), "123");
 
         let mut ctx = TokenizerContext::new("   ");
-        ctx.skip_whitespace();
-        assert_eq!(ctx.rest_input, "");
+        assert_eq!(ctx.skip_whitespace(), true);
+        assert_eq!(ctx.rest_input(), "");
+
+        let mut ctx = TokenizerContext::new("123   ");
+        assert_eq!(ctx.skip_whitespace(), false);
+        assert_eq!(ctx.rest_input(), "123   ");
     }
 
     #[test]
-    fn test_consume_u32() {
-        assert_eq!(TokenizerContext::new("").consume_u32(), None);
-        assert_eq!(TokenizerContext::new("123").consume_u32(), Some(123));
-        assert_eq!(TokenizerContext::new("12+3").consume_u32(), Some(12));
-        assert_eq!(TokenizerContext::new("12 3").consume_u32(), Some(12));
-        assert_eq!(TokenizerContext::new("nan").consume_u32(), None);
+    fn test_consume_number() {
+        let mut ctx = TokenizerContext::new("");
+        assert_eq!(ctx.consume_number().is_none(), true);
+
+        let mut ctx = TokenizerContext::new("123");
+        assert_eq!(
+            ctx.consume_number().map(|t| t.kind).unwrap(),
+            TokenKind::Number(123)
+        );
+
+        let mut ctx = TokenizerContext::new("12+3");
+        assert_eq!(
+            ctx.consume_number().map(|t| t.kind).unwrap(),
+            TokenKind::Number(12)
+        );
+
+        let mut ctx = TokenizerContext::new("nan");
+        assert_eq!(ctx.consume_number().is_none(), true);
     }
 }
