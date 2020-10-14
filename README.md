@@ -4,7 +4,7 @@
 
 [低レイヤを知りたい人のためのCコンパイラ作成入門](https://www.sigbus.info/compilerbook)の演習用リポジトリ
 
-※ ステップ 16 以降から C 言語をやめて Rust に書き換えました
+※ ステップ 15 まで実装してから C 言語から Rust に書き換えました
 
 - [std - Rust](https://doc.rust-lang.org/std/index.html)
 
