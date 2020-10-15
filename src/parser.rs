@@ -60,19 +60,32 @@ fn primary(ctx: &mut ParserContext) -> Node {
     return Node::Number(ctx.expect_number());
 }
 
+fn unary(ctx: &mut ParserContext) -> Node {
+    if ctx.consume("+") {
+        return primary(ctx);
+    }
+    if ctx.consume("-") {
+        return Node::Sub {
+            lhs: Box::new(Node::Number(0)),
+            rhs: Box::new(primary(ctx)),
+        };
+    }
+    return primary(ctx);
+}
+
 fn mul(ctx: &mut ParserContext) -> Node {
-    let mut node = primary(ctx);
+    let mut node = unary(ctx);
 
     loop {
         if ctx.consume("*") {
             node = Node::Mul {
                 lhs: Box::new(node),
-                rhs: Box::new(primary(ctx)),
+                rhs: Box::new(unary(ctx)),
             };
         } else if ctx.consume("/") {
             node = Node::Div {
                 lhs: Box::new(node),
-                rhs: Box::new(primary(ctx)),
+                rhs: Box::new(unary(ctx)),
             };
         } else {
             return node;
