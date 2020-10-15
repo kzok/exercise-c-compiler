@@ -1,20 +1,11 @@
+mod node;
+
+pub use node::{BinaryOperator, Node};
+
 use crate::tokenizer::{Token, TokenKind};
 use std::iter::Peekable;
 use std::slice::Iter;
 use std::vec::Vec;
-
-#[derive(Debug, PartialEq)]
-pub enum Node {
-    Number(u32),                                 // 整数
-    Add { lhs: Box<Node>, rhs: Box<Node> },      // +
-    Sub { lhs: Box<Node>, rhs: Box<Node> },      // -
-    Mul { lhs: Box<Node>, rhs: Box<Node> },      // *
-    Div { lhs: Box<Node>, rhs: Box<Node> },      // /
-    Equal { lhs: Box<Node>, rhs: Box<Node> },    // ==
-    NotEqual { lhs: Box<Node>, rhs: Box<Node> }, // !=
-    Lt { lhs: Box<Node>, rhs: Box<Node> },       // <
-    Lte { lhs: Box<Node>, rhs: Box<Node> },      // <=
-}
 
 struct ParserContext<'a> {
     token_iter: Peekable<Iter<'a, Token<'a>>>,
@@ -69,7 +60,8 @@ fn unary(ctx: &mut ParserContext) -> Node {
         return primary(ctx);
     }
     if ctx.consume("-") {
-        return Node::Sub {
+        return Node::Binary {
+            op: BinaryOperator::Sub,
             lhs: Box::new(Node::Number(0)),
             rhs: Box::new(primary(ctx)),
         };
@@ -82,12 +74,14 @@ fn mul(ctx: &mut ParserContext) -> Node {
 
     loop {
         if ctx.consume("*") {
-            node = Node::Mul {
+            node = Node::Binary {
+                op: BinaryOperator::Mul,
                 lhs: Box::new(node),
                 rhs: Box::new(unary(ctx)),
             };
         } else if ctx.consume("/") {
-            node = Node::Div {
+            node = Node::Binary {
+                op: BinaryOperator::Div,
                 lhs: Box::new(node),
                 rhs: Box::new(unary(ctx)),
             };
@@ -102,12 +96,14 @@ fn add(ctx: &mut ParserContext) -> Node {
 
     loop {
         if ctx.consume("+") {
-            node = Node::Add {
+            node = Node::Binary {
+                op: BinaryOperator::Add,
                 lhs: Box::new(node),
                 rhs: Box::new(mul(ctx)),
             };
         } else if ctx.consume("-") {
-            node = Node::Sub {
+            node = Node::Binary {
+                op: BinaryOperator::Sub,
                 lhs: Box::new(node),
                 rhs: Box::new(mul(ctx)),
             };
@@ -122,22 +118,26 @@ fn relational(ctx: &mut ParserContext) -> Node {
 
     loop {
         if ctx.consume("<") {
-            node = Node::Lt {
+            node = Node::Binary {
+                op: BinaryOperator::LessThan,
                 lhs: Box::new(node),
                 rhs: Box::new(add(ctx)),
             };
         } else if ctx.consume("<=") {
-            node = Node::Lte {
+            node = Node::Binary {
+                op: BinaryOperator::LessThanEqual,
                 lhs: Box::new(node),
                 rhs: Box::new(add(ctx)),
             };
         } else if ctx.consume(">") {
-            node = Node::Lt {
+            node = Node::Binary {
+                op: BinaryOperator::LessThan,
                 lhs: Box::new(add(ctx)),
                 rhs: Box::new(node),
             };
         } else if ctx.consume(">=") {
-            node = Node::Lte {
+            node = Node::Binary {
+                op: BinaryOperator::LessThanEqual,
                 lhs: Box::new(add(ctx)),
                 rhs: Box::new(node),
             };
@@ -152,12 +152,14 @@ fn equality(ctx: &mut ParserContext) -> Node {
 
     loop {
         if ctx.consume("==") {
-            node = Node::Equal {
+            node = Node::Binary {
+                op: BinaryOperator::Equal,
                 lhs: Box::new(node),
                 rhs: Box::new(relational(ctx)),
             };
         } else if ctx.consume("!=") {
-            node = Node::NotEqual {
+            node = Node::Binary {
+                op: BinaryOperator::NotEqual,
                 lhs: Box::new(node),
                 rhs: Box::new(relational(ctx)),
             };
