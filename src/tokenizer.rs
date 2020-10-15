@@ -1,6 +1,8 @@
 use std::vec::Vec;
 
-const SIGNES: &'static [&str] = &["(", ")", "+", "-", "*", "/"];
+const SIGNES: &'static [&str] = &[
+    "==", "!=", "<=", ">=", "<", ">", "(", ")", "+", "-", "*", "/",
+];
 
 #[derive(Debug, PartialEq)]
 pub enum TokenKind<'a> {

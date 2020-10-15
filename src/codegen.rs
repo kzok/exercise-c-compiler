@@ -46,6 +46,46 @@ fn gen(node: &Node) {
             emit!("idiv rdi");
             emit!("push rax");
         }
+        Node::Equal { lhs, rhs } => {
+            gen(lhs);
+            gen(rhs);
+            emit!("pop rdi");
+            emit!("pop rax");
+            emit!("cmp rax, rdi");
+            emit!("sete al");
+            emit!("movzb rax, al");
+            emit!("push rax");
+        }
+        Node::NotEqual { lhs, rhs } => {
+            gen(lhs);
+            gen(rhs);
+            emit!("pop rdi");
+            emit!("pop rax");
+            emit!("cmp rax, rdi");
+            emit!("setne al");
+            emit!("movzb rax, al");
+            emit!("push rax");
+        }
+        Node::Lt { lhs, rhs } => {
+            gen(lhs);
+            gen(rhs);
+            emit!("pop rdi");
+            emit!("pop rax");
+            emit!("cmp rax, rdi");
+            emit!("setl al");
+            emit!("movzb rax, al");
+            emit!("push rax");
+        }
+        Node::Lte { lhs, rhs } => {
+            gen(lhs);
+            gen(rhs);
+            emit!("pop rdi");
+            emit!("pop rax");
+            emit!("cmp rax, rdi");
+            emit!("setle al");
+            emit!("movzb rax, al");
+            emit!("push rax");
+        }
     }
 }
 

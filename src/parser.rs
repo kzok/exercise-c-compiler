@@ -5,11 +5,15 @@ use std::vec::Vec;
 
 #[derive(Debug, PartialEq)]
 pub enum Node {
-    Number(u32),                            // 整数
-    Add { lhs: Box<Node>, rhs: Box<Node> }, // +
-    Sub { lhs: Box<Node>, rhs: Box<Node> }, // -
-    Mul { lhs: Box<Node>, rhs: Box<Node> }, // *
-    Div { lhs: Box<Node>, rhs: Box<Node> }, // /
+    Number(u32),                                 // 整数
+    Add { lhs: Box<Node>, rhs: Box<Node> },      // +
+    Sub { lhs: Box<Node>, rhs: Box<Node> },      // -
+    Mul { lhs: Box<Node>, rhs: Box<Node> },      // *
+    Div { lhs: Box<Node>, rhs: Box<Node> },      // /
+    Equal { lhs: Box<Node>, rhs: Box<Node> },    // ==
+    NotEqual { lhs: Box<Node>, rhs: Box<Node> }, // !=
+    Lt { lhs: Box<Node>, rhs: Box<Node> },       // <
+    Lte { lhs: Box<Node>, rhs: Box<Node> },      // <=
 }
 
 struct ParserContext<'a> {
@@ -93,7 +97,7 @@ fn mul(ctx: &mut ParserContext) -> Node {
     }
 }
 
-fn expr(ctx: &mut ParserContext) -> Node {
+fn add(ctx: &mut ParserContext) -> Node {
     let mut node = mul(ctx);
 
     loop {
@@ -111,6 +115,60 @@ fn expr(ctx: &mut ParserContext) -> Node {
             return node;
         }
     }
+}
+
+fn relational(ctx: &mut ParserContext) -> Node {
+    let mut node = add(ctx);
+
+    loop {
+        if ctx.consume("<") {
+            node = Node::Lt {
+                lhs: Box::new(node),
+                rhs: Box::new(add(ctx)),
+            };
+        } else if ctx.consume("<=") {
+            node = Node::Lte {
+                lhs: Box::new(node),
+                rhs: Box::new(add(ctx)),
+            };
+        } else if ctx.consume(">") {
+            node = Node::Lt {
+                lhs: Box::new(add(ctx)),
+                rhs: Box::new(node),
+            };
+        } else if ctx.consume(">=") {
+            node = Node::Lte {
+                lhs: Box::new(add(ctx)),
+                rhs: Box::new(node),
+            };
+        } else {
+            return node;
+        }
+    }
+}
+
+fn equality(ctx: &mut ParserContext) -> Node {
+    let mut node = relational(ctx);
+
+    loop {
+        if ctx.consume("==") {
+            node = Node::Equal {
+                lhs: Box::new(node),
+                rhs: Box::new(relational(ctx)),
+            };
+        } else if ctx.consume("!=") {
+            node = Node::NotEqual {
+                lhs: Box::new(node),
+                rhs: Box::new(relational(ctx)),
+            };
+        } else {
+            return node;
+        }
+    }
+}
+
+fn expr(ctx: &mut ParserContext) -> Node {
+    return equality(ctx);
 }
 
 pub fn parse(tokens: &Vec<Token>) -> Node {
