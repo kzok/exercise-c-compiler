@@ -15,8 +15,8 @@ fn main() {
 
     let input: &String = &args[1];
     let tokens = tokenize(&input);
-    let node = parse(&tokens);
+    let nodes = parse(&tokens);
 
-    codegen(&node);
+    codegen(&nodes);
     std::process::exit(0);
 }

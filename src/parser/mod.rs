@@ -16,6 +16,10 @@ impl<'a> ParserContext<'a> {
         return ParserContext { token_iter };
     }
 
+    pub fn remains(&mut self) -> bool {
+        return self.token_iter.peek().is_some();
+    }
+
     pub fn consume(&mut self, op: &str) -> bool {
         if let Some(token) = self.token_iter.peek() {
             match token.kind {
@@ -29,12 +33,28 @@ impl<'a> ParserContext<'a> {
         return false;
     }
 
+    pub fn consume_ident(&mut self) -> Option<char> {
+        if let Some(token) = self.token_iter.peek() {
+            match token.kind {
+                TokenKind::Ident(c) => {
+                    self.token_iter.next();
+                    return Some(c);
+                }
+                _ => (),
+            }
+        }
+        return None;
+    }
+
     pub fn expect(&mut self, op: &str) {
         if self.consume(op) {
             return;
         }
-        let token = self.token_iter.peek().unwrap();
-        token.report_error(&format!("'{}' ではありません", op));
+        let error_message = format!("'{}' ではありません", op);
+        if let Some(token) = self.token_iter.peek() {
+            token.report_error(&error_message);
+        }
+        panic!(error_message);
     }
 
     pub fn expect_number(&mut self) -> u32 {
@@ -51,6 +71,11 @@ fn primary(ctx: &mut ParserContext) -> Node {
         let node = expr(ctx);
         ctx.expect(")");
         return node;
+    }
+    if let Some(ident) = ctx.consume_ident() {
+        return Node::LocalVar {
+            offset: (ident as u32 - 'a' as u32 + 1) * 8,
+        };
     }
     return Node::Number(ctx.expect_number());
 }
@@ -169,11 +194,35 @@ fn equality(ctx: &mut ParserContext) -> Node {
     }
 }
 
-fn expr(ctx: &mut ParserContext) -> Node {
-    return equality(ctx);
+fn assign(ctx: &mut ParserContext) -> Node {
+    let mut node = equality(ctx);
+    if ctx.consume("=") {
+        node = Node::Binary {
+            op: BinaryOperator::Assign,
+            lhs: Box::new(node),
+            rhs: Box::new(assign(ctx)),
+        };
+    }
+    return node;
 }
 
-pub fn parse(tokens: &Vec<Token>) -> Node {
+fn expr(ctx: &mut ParserContext) -> Node {
+    return assign(ctx);
+}
+
+fn stmt(ctx: &mut ParserContext) -> Node {
+    let node = expr(ctx);
+    ctx.expect(";");
+    return node;
+}
+
+pub fn parse(tokens: &Vec<Token>) -> Vec<Node> {
+    let mut nodes = Vec::new();
     let mut ctx = ParserContext::new(tokens.iter().peekable());
-    return expr(&mut ctx);
+
+    while ctx.remains() {
+        nodes.push(stmt(&mut ctx));
+    }
+
+    return nodes;
 }

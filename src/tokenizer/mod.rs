@@ -4,7 +4,7 @@ use std::vec::Vec;
 pub use token::{Token, TokenKind};
 
 const SIGNES: &'static [&str] = &[
-    "==", "!=", "<=", ">=", "<", ">", "(", ")", "+", "-", "*", "/",
+    "==", "!=", "<=", ">=", "<", ">", "(", ")", "+", "-", "*", "/", "=", ";",
 ];
 
 struct TokenizerContext<'a> {
@@ -62,6 +62,15 @@ impl<'a> TokenizerContext<'a> {
         return false;
     }
 
+    fn consume_reserved(&mut self) -> bool {
+        for sign in SIGNES {
+            if self.consume(sign) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     pub fn consume_number(&mut self) -> bool {
         let rest_input = self.rest_input();
         let mut num: Option<u32> = None;
@@ -87,20 +96,27 @@ impl<'a> TokenizerContext<'a> {
         }
     }
 
+    pub fn consume_ident(&mut self) -> bool {
+        let rest_input = self.rest_input();
+
+        if let Some(c) = rest_input.chars().next().filter(|&c| 'a' <= c && c <= 'z') {
+            self.tokens.push(Token {
+                kind: TokenKind::Ident(c),
+                line_of_code: &self.input,
+                index: self.index,
+            });
+            self.seek(1);
+            return true;
+        }
+
+        return false;
+    }
+
     pub fn report_error(&self, msg: &str) -> ! {
         let loc = self.input;
         let i = self.index + 1;
         panic!("\n{0}\n{1:>2$} {3}\n", loc, '^', i, msg);
     }
-}
-
-fn consume_as_reserved(ctx: &mut TokenizerContext) -> bool {
-    for sign in SIGNES {
-        if ctx.consume(sign) {
-            return true;
-        }
-    }
-    return false;
 }
 
 pub fn tokenize<'a>(input: &'a str) -> Vec<Token<'a>> {
@@ -113,7 +129,10 @@ pub fn tokenize<'a>(input: &'a str) -> Vec<Token<'a>> {
         if ctx.consume_number() {
             continue;
         }
-        if consume_as_reserved(&mut ctx) {
+        if ctx.consume_reserved() {
+            continue;
+        }
+        if ctx.consume_ident() {
             continue;
         }
         ctx.report_error("トークナイズ出来ません。");

@@ -1,7 +1,8 @@
 #[derive(Debug, PartialEq)]
 pub enum TokenKind<'a> {
-    Reserved(&'a str),
     Number(u32),
+    Reserved(&'a str),
+    Ident(char),
 }
 
 #[derive(Debug)]
