@@ -10,28 +10,23 @@ const SIGNES: &'static [&str] = &[
 struct TokenizerContext<'a> {
     input: &'a str,
     index: usize,
-    tokens: Vec<Token<'a>>,
 }
 
 impl<'a> TokenizerContext<'a> {
-    pub fn new(input: &'a str) -> TokenizerContext {
-        TokenizerContext {
-            input,
-            index: 0,
-            tokens: Vec::new(),
-        }
+    fn new(input: &'a str) -> TokenizerContext {
+        TokenizerContext { input, index: 0 }
     }
 
-    pub fn rest_input(&self) -> &'a str {
+    fn rest_input(&self) -> &'a str {
         return &self.input[self.index..];
+    }
+
+    fn seek(&mut self, steps: usize) {
+        self.index += steps;
     }
 
     pub fn remains(&self) -> bool {
         return self.input.len() > self.index;
-    }
-
-    pub fn seek(&mut self, steps: usize) {
-        self.index += steps;
     }
 
     /// returns true if any whitespace skipped.
@@ -46,32 +41,32 @@ impl<'a> TokenizerContext<'a> {
         return i > 0;
     }
 
-    pub fn consume(&mut self, s: &'a str) -> bool {
+    pub fn consume(&mut self, s: &'a str) -> Option<Token<'a>> {
         let rest_input = self.rest_input();
 
         if rest_input.starts_with(s) {
-            self.tokens.push(Token {
+            let token = Token {
                 kind: TokenKind::Reserved(s),
                 line_of_code: self.input,
                 index: self.index,
-            });
+            };
             self.seek(s.len());
-            return true;
+            return Some(token);
         }
 
-        return false;
+        return None;
     }
 
-    fn consume_reserved(&mut self) -> bool {
+    pub fn consume_reserved(&mut self) -> Option<Token<'a>> {
         for sign in SIGNES {
-            if self.consume(sign) {
-                return true;
+            if let Some(token) = self.consume(sign) {
+                return Some(token);
             }
         }
-        return false;
+        return None;
     }
 
-    pub fn consume_number(&mut self) -> bool {
+    pub fn consume_number(&mut self) -> Option<Token<'a>> {
         let rest_input = self.rest_input();
         let mut num: Option<u32> = None;
         let mut i: usize = 0;
@@ -82,34 +77,32 @@ impl<'a> TokenizerContext<'a> {
 
         match num {
             Some(n) => {
-                self.tokens.push(Token {
+                let token = Token {
                     kind: TokenKind::Number(n),
                     line_of_code: &self.input,
                     index: self.index,
-                });
+                };
                 self.seek(i);
-                return true;
+                return Some(token);
             }
-            None => {
-                return false;
-            }
+            None => return None,
         }
     }
 
-    pub fn consume_ident(&mut self) -> bool {
+    pub fn consume_ident(&mut self) -> Option<Token<'a>> {
         let rest_input = self.rest_input();
 
         if let Some(c) = rest_input.chars().next().filter(|&c| 'a' <= c && c <= 'z') {
-            self.tokens.push(Token {
+            let token = Token {
                 kind: TokenKind::Ident(c),
                 line_of_code: &self.input,
                 index: self.index,
-            });
+            };
             self.seek(1);
-            return true;
+            return Some(token);
         }
 
-        return false;
+        return None;
     }
 
     pub fn report_error(&self, msg: &str) -> ! {
@@ -120,25 +113,34 @@ impl<'a> TokenizerContext<'a> {
 }
 
 pub fn tokenize<'a>(input: &'a str) -> Vec<Token<'a>> {
+    let mut tokens = Vec::new();
     let mut ctx = TokenizerContext::new(&input);
 
     while ctx.remains() {
         if ctx.skip_whitespace() {
             continue;
         }
-        if ctx.consume_number() {
+        if let Some(token) = ctx.consume_number() {
+            tokens.push(token);
             continue;
         }
-        if ctx.consume_reserved() {
+        if let Some(token) = ctx.consume_reserved() {
+            tokens.push(token);
             continue;
         }
-        if ctx.consume_ident() {
+        if let Some(token) = ctx.consume_ident() {
+            tokens.push(token);
             continue;
         }
         ctx.report_error("トークナイズ出来ません。");
     }
 
-    return ctx.tokens;
+    tokens.push(Token {
+        kind: TokenKind::Eof,
+        line_of_code: input,
+        index: input.len(),
+    });
+    return tokens;
 }
 
 #[cfg(test)]
@@ -170,42 +172,34 @@ mod tests {
     #[test]
     fn test_consume() {
         let mut ctx = TokenizerContext::new("123");
-        assert_eq!(ctx.consume("+-+"), false);
+        assert!(ctx.consume("+-+").is_none());
         assert_eq!(ctx.rest_input(), "123");
 
         let mut ctx = TokenizerContext::new("+-123");
-        assert_eq!(ctx.consume("+-+"), false);
+        assert!(ctx.consume("+-+").is_none());
         assert_eq!(ctx.rest_input(), "+-123");
 
         let mut ctx = TokenizerContext::new("+-+123");
-        assert_eq!(ctx.consume("+-+"), true);
+        assert!(ctx.consume("+-+").is_some());
         assert_eq!(ctx.rest_input(), "123");
     }
 
     #[test]
     fn test_consume_number() {
         let mut ctx = TokenizerContext::new("");
-        assert_eq!(ctx.consume_number(), false);
+        assert!(ctx.consume_number().is_none());
         assert_eq!(ctx.rest_input(), "");
 
         let mut ctx = TokenizerContext::new("123");
-        assert_eq!(ctx.consume_number(), true);
-        assert_eq!(
-            ctx.tokens.iter().next().unwrap().kind,
-            TokenKind::Number(123)
-        );
+        assert_eq!(ctx.consume_number().unwrap().kind, TokenKind::Number(123));
         assert_eq!(ctx.rest_input(), "");
 
         let mut ctx = TokenizerContext::new("12+3");
-        assert_eq!(ctx.consume_number(), true);
-        assert_eq!(
-            ctx.tokens.iter().next().unwrap().kind,
-            TokenKind::Number(12)
-        );
+        assert_eq!(ctx.consume_number().unwrap().kind, TokenKind::Number(12));
         assert_eq!(ctx.rest_input(), "+3");
 
         let mut ctx = TokenizerContext::new("nan");
-        assert_eq!(ctx.consume_number(), false);
+        assert!(ctx.consume_number().is_none());
         assert_eq!(ctx.rest_input(), "nan");
     }
 }
