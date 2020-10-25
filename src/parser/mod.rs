@@ -1,37 +1,59 @@
-mod node;
+mod program;
 mod token_cursor;
 
 use crate::tokenizer::Token;
-pub use node::{BinaryOperator, Node};
+pub use program::{BinaryOperator, Node, Program, Variable};
+use std::rc::Rc;
 use std::vec::Vec;
 use token_cursor::TokenCursor;
 
 struct ParserContext<'a> {
+    locals: Vec<Rc<Variable<'a>>>,
     cursor: TokenCursor<'a>,
 }
 
 impl<'a> ParserContext<'a> {
     fn new(tokens: &'a Vec<Token<'a>>) -> ParserContext<'a> {
         return ParserContext {
+            locals: Vec::new(),
             cursor: TokenCursor::new(tokens),
         };
     }
 
-    fn primary(&mut self) -> Node {
+    fn find_lvar(&self, name: &str) -> Option<Rc<Variable<'a>>> {
+        for local in &self.locals {
+            if local.name == name {
+                return Some(local.clone());
+            }
+        }
+        return None;
+    }
+
+    fn primary(&mut self) -> Node<'a> {
         if self.cursor.consume("(") {
             let node = self.expr();
             self.cursor.expect(")");
             return node;
         }
-        if let Some(ident) = self.cursor.consume_ident() {
-            return Node::LocalVar {
-                offset: (ident as u32 - 'a' as u32 + 1) * 8,
-            };
+        if let Some(name) = self.cursor.consume_ident() {
+            if let Some(local) = self.find_lvar(name) {
+                return Node::LocalVar(local);
+            }
+            let previous_offset = self
+                .locals
+                .iter()
+                .fold(0, |p, local| std::cmp::max(p, local.offset));
+            let local = Rc::new(Variable {
+                name: name,
+                offset: previous_offset + 8,
+            });
+            self.locals.push(local.clone());
+            return Node::LocalVar(local);
         }
         return Node::Number(self.cursor.expect_number());
     }
 
-    fn unary(&mut self) -> Node {
+    fn unary(&mut self) -> Node<'a> {
         if self.cursor.consume("+") {
             return self.primary();
         }
@@ -45,7 +67,7 @@ impl<'a> ParserContext<'a> {
         return self.primary();
     }
 
-    fn mul(&mut self) -> Node {
+    fn mul(&mut self) -> Node<'a> {
         let mut node = self.unary();
 
         loop {
@@ -67,7 +89,7 @@ impl<'a> ParserContext<'a> {
         }
     }
 
-    fn add(&mut self) -> Node {
+    fn add(&mut self) -> Node<'a> {
         let mut node = self.mul();
 
         loop {
@@ -89,7 +111,7 @@ impl<'a> ParserContext<'a> {
         }
     }
 
-    fn relational(&mut self) -> Node {
+    fn relational(&mut self) -> Node<'a> {
         let mut node = self.add();
 
         loop {
@@ -123,7 +145,7 @@ impl<'a> ParserContext<'a> {
         }
     }
 
-    fn equality(&mut self) -> Node {
+    fn equality(&mut self) -> Node<'a> {
         let mut node = self.relational();
 
         loop {
@@ -145,7 +167,7 @@ impl<'a> ParserContext<'a> {
         }
     }
 
-    fn assign(&mut self) -> Node {
+    fn assign(&mut self) -> Node<'a> {
         let mut node = self.equality();
         if self.cursor.consume("=") {
             node = Node::Binary {
@@ -157,22 +179,22 @@ impl<'a> ParserContext<'a> {
         return node;
     }
 
-    fn expr(&mut self) -> Node {
+    fn expr(&mut self) -> Node<'a> {
         return self.assign();
     }
 
-    pub fn stmt(&mut self) -> Node {
+    pub fn stmt(&mut self) -> Node<'a> {
         let node = self.expr();
         self.cursor.expect(";");
         return node;
     }
 
-    pub fn remains(&mut self) -> bool {
+    pub fn remains(&self) -> bool {
         return self.cursor.remains();
     }
 }
 
-pub fn parse(tokens: &Vec<Token>) -> Vec<Node> {
+pub fn parse<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
     let mut nodes = Vec::new();
     let mut ctx = ParserContext::new(&tokens);
 
@@ -180,5 +202,13 @@ pub fn parse(tokens: &Vec<Token>) -> Vec<Node> {
         nodes.push(ctx.stmt());
     }
 
-    return nodes;
+    let stack_size = ctx
+        .locals
+        .iter()
+        .fold(0, |p, local| std::cmp::max(p, local.offset));
+    return Program {
+        locals: ctx.locals,
+        nodes,
+        stack_size,
+    };
 }

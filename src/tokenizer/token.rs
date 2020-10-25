@@ -2,7 +2,7 @@
 pub enum TokenKind<'a> {
     Number(u32),
     Reserved(&'a str),
-    Ident(char),
+    Ident(&'a str),
     Eof,
 }
 

@@ -19,7 +19,7 @@ impl<'a> TokenCursor<'a> {
         self.index += 1;
     }
 
-    pub fn remains(&mut self) -> bool {
+    pub fn remains(&self) -> bool {
         match self.current().kind {
             TokenKind::Eof => return false,
             _ => return true,
@@ -36,7 +36,7 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
-    pub fn consume_ident(&mut self) -> Option<char> {
+    pub fn consume_ident(&mut self) -> Option<&'a str> {
         match self.current().kind {
             TokenKind::Ident(c) => {
                 self.seek();

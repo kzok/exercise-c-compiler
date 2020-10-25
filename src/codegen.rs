@@ -1,4 +1,4 @@
-use crate::parser::{BinaryOperator, Node};
+use crate::parser::{BinaryOperator, Node, Program};
 
 macro_rules! p {
   ($($arg:tt)*) => ({println!($($arg)*);})
@@ -10,9 +10,9 @@ macro_rules! emit {
 
 fn gen_lvar(node: &Node) {
     match node {
-        Node::LocalVar { offset } => {
+        Node::LocalVar(local) => {
             emit!("mov rax, rbp");
-            emit!("sub rax, {}", offset);
+            emit!("sub rax, {}", local.offset);
             emit!("push rax");
         }
         _ => panic!("代入の左辺値が変数ではありません"),
@@ -24,7 +24,7 @@ fn gen(node: &Node) {
         Node::Number(n) => {
             emit!("push {}", n);
         }
-        Node::LocalVar { offset: _ } => {
+        Node::LocalVar(_) => {
             gen_lvar(node);
             emit!("pop rax");
             emit!("mov rax, [rax]");
@@ -83,17 +83,17 @@ fn gen(node: &Node) {
     }
 }
 
-pub fn codegen(nodes: &Vec<Node>) {
+pub fn codegen(program: &Program) {
     p!(".intel_syntax noprefix");
     p!(".global main");
     p!("main:");
 
-    // 変数26個分の領域を確保する
+    // 変数分の領域を確保する
     emit!("push rbp");
     emit!("mov rbp, rsp");
-    emit!("sub rsp, 208");
+    emit!("sub rsp, {}", program.stack_size);
 
-    for node in nodes {
+    for node in &program.nodes {
         gen(node);
         // 式の評価結果としてスタックに一つの値が残っている
         // はずなので、スタックが溢れないようにポップしておく

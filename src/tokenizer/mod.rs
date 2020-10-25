@@ -92,13 +92,22 @@ impl<'a> TokenizerContext<'a> {
     pub fn consume_ident(&mut self) -> Option<Token<'a>> {
         let rest_input = self.rest_input();
 
-        if let Some(c) = rest_input.chars().next().filter(|&c| 'a' <= c && c <= 'z') {
+        let mut i: usize = 0;
+        let mut iter = rest_input.chars();
+        if iter.next().filter(|&c| 'a' <= c && c <= 'z').is_some() {
+            i += 1;
+            while iter.next().filter(|&c| c.is_digit(36)).is_some() {
+                i += 1;
+            }
+        }
+
+        if i > 0 {
             let token = Token {
-                kind: TokenKind::Ident(c),
+                kind: TokenKind::Ident(&rest_input[0..i]),
                 line_of_code: &self.input,
                 index: self.index,
             };
-            self.seek(1);
+            self.seek(i);
             return Some(token);
         }
 
@@ -201,5 +210,20 @@ mod tests {
         let mut ctx = TokenizerContext::new("nan");
         assert!(ctx.consume_number().is_none());
         assert_eq!(ctx.rest_input(), "nan");
+    }
+
+    #[test]
+    fn test_consume_ident() {
+        let mut ctx = TokenizerContext::new("1abc");
+        assert!(ctx.consume_ident().is_none());
+        assert_eq!(ctx.rest_input(), "1abc");
+
+        let mut ctx = TokenizerContext::new("a1bc");
+        assert_eq!(ctx.consume_ident().unwrap().kind, TokenKind::Ident("a1bc"));
+        assert_eq!(ctx.rest_input(), "");
+
+        let mut ctx = TokenizerContext::new("ab1c+2");
+        assert_eq!(ctx.consume_ident().unwrap().kind, TokenKind::Ident("ab1c"));
+        assert_eq!(ctx.rest_input(), "+2");
     }
 }
