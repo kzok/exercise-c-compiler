@@ -10,8 +10,7 @@
 
 ## 参考資料
 
-- [9cc](https://github.com/rui314/9cc)
-- [chibicc](https://github.com/rui314/chibicc)
+- [chibicc](https://github.com/rui314/chibicc/tree/historical/old)
 
 ## コマンド
 
