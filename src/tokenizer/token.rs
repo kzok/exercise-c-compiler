@@ -3,6 +3,7 @@ pub enum TokenKind<'a> {
     Number(u32),
     Sign(&'a str),
     Ident(&'a str),
+    Keyword(&'a str),
     Eof,
 }
 

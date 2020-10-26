@@ -184,6 +184,11 @@ impl<'a> ParserContext<'a> {
     }
 
     pub fn stmt(&mut self) -> Node<'a> {
+        if self.cursor.consume_keyword("return") {
+            let node = Node::Return(Box::new(self.expr()));
+            self.cursor.expect_sign(";");
+            return node;
+        }
         let node = self.expr();
         self.cursor.expect_sign(";");
         return node;

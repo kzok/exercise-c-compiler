@@ -40,6 +40,8 @@ pub enum Node<'a> {
         lhs: Box<Node<'a>>,
         rhs: Box<Node<'a>>,
     },
+    // return 文
+    Return(Box<Node<'a>>),
 }
 
 #[derive(Debug, PartialEq)]

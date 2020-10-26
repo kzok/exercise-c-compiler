@@ -7,6 +7,16 @@ const SIGNES: &'static [&str] = &[
     "==", "!=", "<=", ">=", "<", ">", "(", ")", "+", "-", "*", "/", "=", ";",
 ];
 
+const KEYWORDS: &'static [&str] = &["return"];
+
+fn is_alpha(c: &char) -> bool {
+    return ('a' <= *c && *c <= 'z') || ('A' <= *c && *c <= 'Z') || (*c == '_');
+}
+
+fn is_alnum(c: &char) -> bool {
+    return is_alpha(c) || c.is_digit(10);
+}
+
 struct TokenizerContext<'a> {
     input: &'a str,
     index: usize,
@@ -41,25 +51,36 @@ impl<'a> TokenizerContext<'a> {
         return i > 0;
     }
 
-    fn consume_sign(&mut self, s: &'a str) -> Option<Token<'a>> {
+    pub fn consume_sign(&mut self) -> Option<Token<'a>> {
         let rest_input = self.rest_input();
 
-        if rest_input.starts_with(s) {
-            let token = Token {
-                kind: TokenKind::Sign(s),
-                line_of_code: self.input,
-                index: self.index,
-            };
-            self.seek(s.len());
-            return Some(token);
+        for sign in SIGNES {
+            if rest_input.starts_with(sign) {
+                let token = Token {
+                    kind: TokenKind::Sign(sign),
+                    line_of_code: self.input,
+                    index: self.index,
+                };
+                self.seek(sign.len());
+                return Some(token);
+            }
         }
-
         return None;
     }
 
-    pub fn consume_as_sign(&mut self) -> Option<Token<'a>> {
-        for sign in SIGNES {
-            if let Some(token) = self.consume_sign(sign) {
+    pub fn consume_keyword(&mut self) -> Option<Token<'a>> {
+        let rest_input = self.rest_input();
+
+        for keyword in KEYWORDS {
+            let trailing = rest_input.chars().nth(keyword.len());
+
+            if rest_input.starts_with(keyword) && trailing.filter(is_alnum).is_none() {
+                let token = Token {
+                    kind: TokenKind::Keyword(keyword),
+                    line_of_code: self.input,
+                    index: self.index,
+                };
+                self.seek(keyword.len());
                 return Some(token);
             }
         }
@@ -94,9 +115,9 @@ impl<'a> TokenizerContext<'a> {
 
         let mut i: usize = 0;
         let mut iter = rest_input.chars();
-        if iter.next().filter(|&c| 'a' <= c && c <= 'z').is_some() {
+        if iter.next().filter(is_alpha).is_some() {
             i += 1;
-            while iter.next().filter(|&c| c.is_digit(36)).is_some() {
+            while iter.next().filter(is_alnum).is_some() {
                 i += 1;
             }
         }
@@ -133,7 +154,11 @@ pub fn tokenize<'a>(input: &'a str) -> Vec<Token<'a>> {
             tokens.push(token);
             continue;
         }
-        if let Some(token) = ctx.consume_as_sign() {
+        if let Some(token) = ctx.consume_sign() {
+            tokens.push(token);
+            continue;
+        }
+        if let Some(token) = ctx.consume_keyword() {
             tokens.push(token);
             continue;
         }
@@ -179,18 +204,29 @@ mod tests {
     }
 
     #[test]
-    fn test_consume() {
+    fn consume_sign() {
         let mut ctx = TokenizerContext::new("123");
-        assert!(ctx.consume_sign("+-+").is_none());
+        assert!(ctx.consume_sign().is_none());
         assert_eq!(ctx.rest_input(), "123");
-
-        let mut ctx = TokenizerContext::new("+-123");
-        assert!(ctx.consume_sign("+-+").is_none());
-        assert_eq!(ctx.rest_input(), "+-123");
 
         let mut ctx = TokenizerContext::new("+-+123");
-        assert!(ctx.consume_sign("+-+").is_some());
-        assert_eq!(ctx.rest_input(), "123");
+        assert!(ctx.consume_sign().is_some());
+        assert_eq!(ctx.rest_input(), "-+123");
+    }
+
+    #[test]
+    fn test_consume_keyword() {
+        let mut ctx = TokenizerContext::new("returna");
+        assert!(ctx.consume_keyword().is_none());
+        assert_eq!(ctx.rest_input(), "returna");
+
+        let mut ctx = TokenizerContext::new("return");
+        assert!(ctx.consume_keyword().is_some());
+        assert_eq!(ctx.rest_input(), "");
+
+        let mut ctx = TokenizerContext::new("return;");
+        assert!(ctx.consume_keyword().is_some());
+        assert_eq!(ctx.rest_input(), ";");
     }
 
     #[test]

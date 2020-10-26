@@ -30,6 +30,13 @@ fn gen(node: &Node) {
             emit!("mov rax, [rax]");
             emit!("push rax");
         }
+        Node::Return(node) => {
+            gen(node);
+            emit!("pop rax");
+            emit!("mov rsp, rbp");
+            emit!("pop rbp");
+            emit!("ret");
+        }
         Node::Binary { op, lhs, rhs } => {
             match op {
                 BinaryOperator::Assign => {

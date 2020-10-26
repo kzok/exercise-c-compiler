@@ -21,7 +21,8 @@
 
 ```
 program    = stmt*
-stmt       = expr ";"
+stmt       = "return" expr ";"
+           | expr ";"
 expr       = assign
 assign     = equality ("=" assign)?
 equality   = relational ("==" relational | "!=" relational)*

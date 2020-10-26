@@ -64,4 +64,8 @@ assert 6 'a=b=3; a+b;'
 
 assert 6 'foo=1; bar=2+3; foo+bar;'
 
+assert 0 'return 0;'
+assert 5 'return 5; return 8;'
+assert 21 'return 5+20-4;'
+
 echo -e '\e[32mAll tests passed!\e[0m'

@@ -26,9 +26,19 @@ impl<'a> TokenCursor<'a> {
         };
     }
 
-    pub fn consume_sign(&mut self, op: &str) -> bool {
+    pub fn consume_sign(&mut self, sign: &str) -> bool {
         match self.current().kind {
-            TokenKind::Sign(token_op) if token_op == op => {
+            TokenKind::Sign(s) if s == sign => {
+                self.seek();
+                return true;
+            }
+            _ => return false,
+        }
+    }
+
+    pub fn consume_keyword(&mut self, keyword: &str) -> bool {
+        match self.current().kind {
+            TokenKind::Keyword(s) if s == keyword => {
                 self.seek();
                 return true;
             }
