@@ -26,9 +26,9 @@ impl<'a> TokenCursor<'a> {
         };
     }
 
-    pub fn consume(&mut self, op: &str) -> bool {
+    pub fn consume_sign(&mut self, op: &str) -> bool {
         match self.current().kind {
-            TokenKind::Reserved(token_op) if token_op == op => {
+            TokenKind::Sign(token_op) if token_op == op => {
                 self.seek();
                 return true;
             }
@@ -46,8 +46,8 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
-    pub fn expect(&mut self, op: &str) {
-        if self.consume(op) {
+    pub fn expect_sign(&mut self, op: &str) {
+        if self.consume_sign(op) {
             return;
         }
         self.current()

@@ -30,9 +30,9 @@ impl<'a> ParserContext<'a> {
     }
 
     fn primary(&mut self) -> Node<'a> {
-        if self.cursor.consume("(") {
+        if self.cursor.consume_sign("(") {
             let node = self.expr();
-            self.cursor.expect(")");
+            self.cursor.expect_sign(")");
             return node;
         }
         if let Some(name) = self.cursor.consume_ident() {
@@ -54,10 +54,10 @@ impl<'a> ParserContext<'a> {
     }
 
     fn unary(&mut self) -> Node<'a> {
-        if self.cursor.consume("+") {
+        if self.cursor.consume_sign("+") {
             return self.primary();
         }
-        if self.cursor.consume("-") {
+        if self.cursor.consume_sign("-") {
             return Node::Binary {
                 op: BinaryOperator::Sub,
                 lhs: Box::new(Node::Number(0)),
@@ -71,13 +71,13 @@ impl<'a> ParserContext<'a> {
         let mut node = self.unary();
 
         loop {
-            if self.cursor.consume("*") {
+            if self.cursor.consume_sign("*") {
                 node = Node::Binary {
                     op: BinaryOperator::Mul,
                     lhs: Box::new(node),
                     rhs: Box::new(self.unary()),
                 };
-            } else if self.cursor.consume("/") {
+            } else if self.cursor.consume_sign("/") {
                 node = Node::Binary {
                     op: BinaryOperator::Div,
                     lhs: Box::new(node),
@@ -93,13 +93,13 @@ impl<'a> ParserContext<'a> {
         let mut node = self.mul();
 
         loop {
-            if self.cursor.consume("+") {
+            if self.cursor.consume_sign("+") {
                 node = Node::Binary {
                     op: BinaryOperator::Add,
                     lhs: Box::new(node),
                     rhs: Box::new(self.mul()),
                 };
-            } else if self.cursor.consume("-") {
+            } else if self.cursor.consume_sign("-") {
                 node = Node::Binary {
                     op: BinaryOperator::Sub,
                     lhs: Box::new(node),
@@ -115,25 +115,25 @@ impl<'a> ParserContext<'a> {
         let mut node = self.add();
 
         loop {
-            if self.cursor.consume("<") {
+            if self.cursor.consume_sign("<") {
                 node = Node::Binary {
                     op: BinaryOperator::LessThan,
                     lhs: Box::new(node),
                     rhs: Box::new(self.add()),
                 };
-            } else if self.cursor.consume("<=") {
+            } else if self.cursor.consume_sign("<=") {
                 node = Node::Binary {
                     op: BinaryOperator::LessThanEqual,
                     lhs: Box::new(node),
                     rhs: Box::new(self.add()),
                 };
-            } else if self.cursor.consume(">") {
+            } else if self.cursor.consume_sign(">") {
                 node = Node::Binary {
                     op: BinaryOperator::LessThan,
                     lhs: Box::new(self.add()),
                     rhs: Box::new(node),
                 };
-            } else if self.cursor.consume(">=") {
+            } else if self.cursor.consume_sign(">=") {
                 node = Node::Binary {
                     op: BinaryOperator::LessThanEqual,
                     lhs: Box::new(self.add()),
@@ -149,13 +149,13 @@ impl<'a> ParserContext<'a> {
         let mut node = self.relational();
 
         loop {
-            if self.cursor.consume("==") {
+            if self.cursor.consume_sign("==") {
                 node = Node::Binary {
                     op: BinaryOperator::Equal,
                     lhs: Box::new(node),
                     rhs: Box::new(self.relational()),
                 };
-            } else if self.cursor.consume("!=") {
+            } else if self.cursor.consume_sign("!=") {
                 node = Node::Binary {
                     op: BinaryOperator::NotEqual,
                     lhs: Box::new(node),
@@ -169,7 +169,7 @@ impl<'a> ParserContext<'a> {
 
     fn assign(&mut self) -> Node<'a> {
         let mut node = self.equality();
-        if self.cursor.consume("=") {
+        if self.cursor.consume_sign("=") {
             node = Node::Binary {
                 op: BinaryOperator::Assign,
                 lhs: Box::new(node),
@@ -185,7 +185,7 @@ impl<'a> ParserContext<'a> {
 
     pub fn stmt(&mut self) -> Node<'a> {
         let node = self.expr();
-        self.cursor.expect(";");
+        self.cursor.expect_sign(";");
         return node;
     }
 

@@ -41,12 +41,12 @@ impl<'a> TokenizerContext<'a> {
         return i > 0;
     }
 
-    pub fn consume(&mut self, s: &'a str) -> Option<Token<'a>> {
+    fn consume_sign(&mut self, s: &'a str) -> Option<Token<'a>> {
         let rest_input = self.rest_input();
 
         if rest_input.starts_with(s) {
             let token = Token {
-                kind: TokenKind::Reserved(s),
+                kind: TokenKind::Sign(s),
                 line_of_code: self.input,
                 index: self.index,
             };
@@ -57,9 +57,9 @@ impl<'a> TokenizerContext<'a> {
         return None;
     }
 
-    pub fn consume_reserved(&mut self) -> Option<Token<'a>> {
+    pub fn consume_as_sign(&mut self) -> Option<Token<'a>> {
         for sign in SIGNES {
-            if let Some(token) = self.consume(sign) {
+            if let Some(token) = self.consume_sign(sign) {
                 return Some(token);
             }
         }
@@ -133,7 +133,7 @@ pub fn tokenize<'a>(input: &'a str) -> Vec<Token<'a>> {
             tokens.push(token);
             continue;
         }
-        if let Some(token) = ctx.consume_reserved() {
+        if let Some(token) = ctx.consume_as_sign() {
             tokens.push(token);
             continue;
         }
@@ -181,15 +181,15 @@ mod tests {
     #[test]
     fn test_consume() {
         let mut ctx = TokenizerContext::new("123");
-        assert!(ctx.consume("+-+").is_none());
+        assert!(ctx.consume_sign("+-+").is_none());
         assert_eq!(ctx.rest_input(), "123");
 
         let mut ctx = TokenizerContext::new("+-123");
-        assert!(ctx.consume("+-+").is_none());
+        assert!(ctx.consume_sign("+-+").is_none());
         assert_eq!(ctx.rest_input(), "+-123");
 
         let mut ctx = TokenizerContext::new("+-+123");
-        assert!(ctx.consume("+-+").is_some());
+        assert!(ctx.consume_sign("+-+").is_some());
         assert_eq!(ctx.rest_input(), "123");
     }
 
