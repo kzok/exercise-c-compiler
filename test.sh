@@ -68,4 +68,9 @@ assert 0 'return 0;'
 assert 5 'return 5; return 8;'
 assert 21 'return 5+20-4;'
 
+assert 3 'if (0) return 2; return 3;'
+assert 3 'if (1-1) return 2; return 3;'
+assert 2 'if (1) return 2; return 3;'
+assert 2 'if (2-1) return 2; return 3;'
+
 echo -e '\e[32mAll tests passed!\e[0m'

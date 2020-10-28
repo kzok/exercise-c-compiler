@@ -22,6 +22,7 @@
 ```
 program    = stmt*
 stmt       = "return" expr ";"
+           | "if" "(" expr ")" stmt ("else" stmt)?
            | expr ";"
 expr       = assign
 assign     = equality ("=" assign)?

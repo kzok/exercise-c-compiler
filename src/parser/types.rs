@@ -42,6 +42,12 @@ pub enum Node<'a> {
     },
     // return 文
     Return(Box<Node<'a>>),
+    // if
+    If {
+        cond: Box<Node<'a>>,
+        then: Box<Node<'a>>,
+        els: Option<Box<Node<'a>>>,
+    },
 }
 
 #[derive(Debug, PartialEq)]

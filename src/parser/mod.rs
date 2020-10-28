@@ -1,11 +1,11 @@
-mod program;
 mod token_cursor;
+mod types;
 
 use crate::tokenizer::Token;
-pub use program::{BinaryOperator, Node, Program, Variable};
 use std::rc::Rc;
 use std::vec::Vec;
 use token_cursor::TokenCursor;
+pub use types::{BinaryOperator, Node, Program, Variable};
 
 struct ParserContext<'a> {
     locals: Vec<Rc<Variable<'a>>>,
@@ -184,11 +184,26 @@ impl<'a> ParserContext<'a> {
     }
 
     pub fn stmt(&mut self) -> Node<'a> {
+        // if
+        if self.cursor.consume_keyword("if") {
+            self.cursor.expect_sign("(");
+            let cond = Box::new(self.expr());
+            self.cursor.expect_sign(")");
+            let then = Box::new(self.stmt());
+            let mut els: Option<Box<Node<'a>>> = None;
+            if self.cursor.consume_keyword("else") {
+                els = Some(Box::new(self.stmt()));
+            }
+            return Node::If { cond, then, els };
+        }
+
+        // return
         if self.cursor.consume_keyword("return") {
             let node = Node::Return(Box::new(self.expr()));
             self.cursor.expect_sign(";");
             return node;
         }
+
         let node = self.expr();
         self.cursor.expect_sign(";");
         return node;
