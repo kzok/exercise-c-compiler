@@ -53,6 +53,13 @@ pub enum Node<'a> {
         cond: Box<Node<'a>>,
         then: Box<Node<'a>>,
     },
+    // for
+    For {
+        init: Option<Box<Node<'a>>>,
+        cond: Option<Box<Node<'a>>>,
+        inc: Option<Box<Node<'a>>>,
+        then: Box<Node<'a>>,
+    },
 }
 
 #[derive(Debug, PartialEq)]

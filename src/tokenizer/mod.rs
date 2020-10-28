@@ -7,7 +7,7 @@ const SIGNES: &'static [&str] = &[
     "==", "!=", "<=", ">=", "<", ">", "(", ")", "+", "-", "*", "/", "=", ";",
 ];
 
-const KEYWORDS: &'static [&str] = &["return", "if", "else", "while"];
+const KEYWORDS: &'static [&str] = &["return", "if", "else", "while", "for"];
 
 fn is_alpha(c: &char) -> bool {
     return ('a' <= *c && *c <= 'z') || ('A' <= *c && *c <= 'Z') || (*c == '_');

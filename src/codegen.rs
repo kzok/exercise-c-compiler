@@ -141,6 +141,30 @@ impl CodegenContext {
                 emit!("jmp .L.begin.{}", id);
                 p!(".L.end.{}:", id);
             }
+            Node::For {
+                init,
+                cond,
+                inc,
+                then,
+            } => {
+                let id = self.generate_id();
+                if let Some(init) = init {
+                    self.gen(init);
+                }
+                p!(".L.begin.{}:", id);
+                if let Some(cond) = cond {
+                    self.gen(cond);
+                    emit!("pop rax");
+                    emit!("cmp rax, 0");
+                    emit!("je  .L.end.{}", id);
+                }
+                self.gen(then);
+                if let Some(inc) = inc {
+                    self.gen(inc);
+                }
+                emit!("jmp .L.begin.{}", id);
+                p!(".L.end.{}:", id);
+            }
         }
     }
 }

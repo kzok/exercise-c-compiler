@@ -190,10 +190,11 @@ impl<'a> ParserContext<'a> {
             let cond = Box::new(self.expr());
             self.cursor.expect_sign(")");
             let then = Box::new(self.stmt());
-            let mut els: Option<Box<Node<'a>>> = None;
-            if self.cursor.consume_keyword("else") {
-                els = Some(Box::new(self.stmt()));
-            }
+            let els = if self.cursor.consume_keyword("else") {
+                Some(Box::new(self.stmt()))
+            } else {
+                None
+            };
             return Node::If { cond, then, els };
         }
 
@@ -204,6 +205,39 @@ impl<'a> ParserContext<'a> {
             self.cursor.expect_sign(")");
             let then = Box::new(self.stmt());
             return Node::While { cond, then };
+        }
+
+        // for
+        if self.cursor.consume_keyword("for") {
+            self.cursor.expect_sign("(");
+            let init = if !self.cursor.consume_sign(";") {
+                let node = self.expr();
+                self.cursor.expect_sign(";");
+                Some(Box::new(node))
+            } else {
+                None
+            };
+            let cond = if !self.cursor.consume_sign(";") {
+                let node = self.expr();
+                self.cursor.expect_sign(";");
+                Some(Box::new(node))
+            } else {
+                None
+            };
+            let inc = if !self.cursor.consume_sign(")") {
+                let node = self.expr();
+                self.cursor.expect_sign(")");
+                Some(Box::new(node))
+            } else {
+                None
+            };
+            let then = Box::new(self.stmt());
+            return Node::For {
+                init,
+                cond,
+                inc,
+                then,
+            };
         }
 
         // return
