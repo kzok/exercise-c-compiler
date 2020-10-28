@@ -1,13 +1,19 @@
-mod token;
+mod types;
 
 use std::vec::Vec;
-pub use token::{Token, TokenKind};
+pub use types::{Keyword, Token, TokenKind};
 
 const SIGNES: &'static [&str] = &[
     "==", "!=", "<=", ">=", "<", ">", "(", ")", "+", "-", "*", "/", "=", ";",
 ];
 
-const KEYWORDS: &'static [&str] = &["return", "if", "else", "while", "for"];
+const KEYWORDS: &'static [(&str, Keyword)] = &[
+    ("return", Keyword::Return),
+    ("if", Keyword::If),
+    ("else", Keyword::Else),
+    ("while", Keyword::While),
+    ("for", Keyword::For),
+];
 
 fn is_alpha(c: &char) -> bool {
     return ('a' <= *c && *c <= 'z') || ('A' <= *c && *c <= 'Z') || (*c == '_');
@@ -71,12 +77,12 @@ impl<'a> TokenizerContext<'a> {
     pub fn consume_keyword(&mut self) -> Option<Token<'a>> {
         let rest_input = self.rest_input();
 
-        for keyword in KEYWORDS {
+        for (keyword, value) in KEYWORDS {
             let trailing = rest_input.chars().nth(keyword.len());
 
             if rest_input.starts_with(keyword) && trailing.filter(is_alnum).is_none() {
                 let token = Token {
-                    kind: TokenKind::Keyword(keyword),
+                    kind: TokenKind::Keyword(*value),
                     line_of_code: self.input,
                     index: self.index,
                 };

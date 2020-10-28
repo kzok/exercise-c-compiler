@@ -1,7 +1,7 @@
 mod token_cursor;
 mod types;
 
-use crate::tokenizer::Token;
+use crate::tokenizer::{Keyword, Token};
 use std::rc::Rc;
 use std::vec::Vec;
 use token_cursor::TokenCursor;
@@ -185,12 +185,12 @@ impl<'a> ParserContext<'a> {
 
     pub fn stmt(&mut self) -> Node<'a> {
         // if
-        if self.cursor.consume_keyword("if") {
+        if self.cursor.consume_keyword(Keyword::If) {
             self.cursor.expect_sign("(");
             let cond = Box::new(self.expr());
             self.cursor.expect_sign(")");
             let then = Box::new(self.stmt());
-            let els = if self.cursor.consume_keyword("else") {
+            let els = if self.cursor.consume_keyword(Keyword::Else) {
                 Some(Box::new(self.stmt()))
             } else {
                 None
@@ -199,7 +199,7 @@ impl<'a> ParserContext<'a> {
         }
 
         // while
-        if self.cursor.consume_keyword("while") {
+        if self.cursor.consume_keyword(Keyword::While) {
             self.cursor.expect_sign("(");
             let cond = Box::new(self.expr());
             self.cursor.expect_sign(")");
@@ -208,7 +208,7 @@ impl<'a> ParserContext<'a> {
         }
 
         // for
-        if self.cursor.consume_keyword("for") {
+        if self.cursor.consume_keyword(Keyword::For) {
             self.cursor.expect_sign("(");
             let init = if !self.cursor.consume_sign(";") {
                 let node = self.expr();
@@ -241,7 +241,7 @@ impl<'a> ParserContext<'a> {
         }
 
         // return
-        if self.cursor.consume_keyword("return") {
+        if self.cursor.consume_keyword(Keyword::Return) {
             let node = Node::Return(Box::new(self.expr()));
             self.cursor.expect_sign(";");
             return node;

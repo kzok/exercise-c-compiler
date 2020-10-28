@@ -1,9 +1,18 @@
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub enum Keyword {
+    Return,
+    If,
+    Else,
+    While,
+    For,
+}
+
 #[derive(Debug, PartialEq)]
 pub enum TokenKind<'a> {
     Number(u32),
     Sign(&'a str),
     Ident(&'a str),
-    Keyword(&'a str),
+    Keyword(Keyword),
     Eof,
 }
 

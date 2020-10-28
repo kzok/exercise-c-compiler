@@ -1,4 +1,4 @@
-use crate::tokenizer::{Token, TokenKind};
+use crate::tokenizer::{Keyword, Token, TokenKind};
 use std::vec::Vec;
 
 pub struct TokenCursor<'a> {
@@ -36,7 +36,7 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
-    pub fn consume_keyword(&mut self, keyword: &str) -> bool {
+    pub fn consume_keyword(&mut self, keyword: Keyword) -> bool {
         match self.current().kind {
             TokenKind::Keyword(s) if s == keyword => {
                 self.seek();
