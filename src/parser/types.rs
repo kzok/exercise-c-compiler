@@ -48,6 +48,11 @@ pub enum Node<'a> {
         then: Box<Node<'a>>,
         els: Option<Box<Node<'a>>>,
     },
+    // while
+    While {
+        cond: Box<Node<'a>>,
+        then: Box<Node<'a>>,
+    },
 }
 
 #[derive(Debug, PartialEq)]

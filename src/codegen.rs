@@ -130,6 +130,17 @@ impl CodegenContext {
                     }
                 }
             }
+            Node::While { cond, then } => {
+                let id = self.generate_id();
+                p!(".L.begin.{}:", id);
+                self.gen(cond);
+                emit!("pop rax");
+                emit!("cmp rax, 0");
+                emit!("je  .L.end.{}", id);
+                self.gen(then);
+                emit!("jmp .L.begin.{}", id);
+                p!(".L.end.{}:", id);
+            }
         }
     }
 }

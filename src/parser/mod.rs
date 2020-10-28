@@ -197,6 +197,15 @@ impl<'a> ParserContext<'a> {
             return Node::If { cond, then, els };
         }
 
+        // while
+        if self.cursor.consume_keyword("while") {
+            self.cursor.expect_sign("(");
+            let cond = Box::new(self.expr());
+            self.cursor.expect_sign(")");
+            let then = Box::new(self.stmt());
+            return Node::While { cond, then };
+        }
+
         // return
         if self.cursor.consume_keyword("return") {
             let node = Node::Return(Box::new(self.expr()));
