@@ -11,4 +11,5 @@
 #Added by cargo
 
 tmp
-tmp.s
+*.s
+*.o

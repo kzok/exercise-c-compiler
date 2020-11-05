@@ -36,9 +36,18 @@ impl<'a> ParserContext<'a> {
             return node;
         }
         if let Some(name) = self.cursor.consume_ident() {
+            // funcall
+            if self.cursor.consume_sign("(") {
+                self.cursor.expect_sign(")");
+                return Node::FunCall { name };
+            }
+
+            // known variable
             if let Some(local) = self.find_lvar(name) {
                 return Node::LocalVar(local);
             }
+
+            // new variable
             let previous_offset = self
                 .locals
                 .iter()

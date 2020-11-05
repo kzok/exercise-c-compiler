@@ -62,6 +62,10 @@ pub enum Node<'a> {
     },
     // block
     Block(Vec<Box<Node<'a>>>),
+    // 関数呼出
+    FunCall {
+        name: &'a str,
+    },
 }
 
 #[derive(Debug, PartialEq)]

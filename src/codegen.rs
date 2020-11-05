@@ -170,6 +170,10 @@ impl CodegenContext {
                     self.gen(node);
                 }
             }
+            Node::FunCall { name } => {
+                emit!("call {}", name);
+                emit!("push rax");
+            }
         }
     }
 }
