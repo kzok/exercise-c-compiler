@@ -10,7 +10,9 @@
 
 ## 参考資料
 
-- [chibicc](https://github.com/rui314/chibicc/tree/historical/old)
+- [chibicc](https://github.com/rui314/chibicc/)
+  - [historical/old](https://github.com/rui314/chibicc/commits/historical/old)
+  - [reference](https://github.com/rui314/chibicc/commits/reference)
 
 ## コマンド
 
