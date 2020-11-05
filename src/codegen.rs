@@ -165,6 +165,11 @@ impl CodegenContext {
                 emit!("jmp .L.begin.{}", id);
                 p!(".L.end.{}:", id);
             }
+            Node::Block(nodes) => {
+                for node in nodes {
+                    self.gen(node);
+                }
+            }
         }
     }
 }

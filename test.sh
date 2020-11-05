@@ -67,6 +67,7 @@ assert 6 'foo=1; bar=2+3; foo+bar;'
 assert 0 'return 0;'
 assert 5 'return 5; return 8;'
 assert 21 'return 5+20-4;'
+assert 3 '{1; {2;} return 3;}'
 
 assert 3 'if (0) return 2; return 3;'
 assert 3 'if (1-1) return 2; return 3;'
@@ -74,6 +75,7 @@ assert 2 'if (1) return 2; return 3;'
 assert 2 'if (2-1) return 2; return 3;'
 
 assert 10 'i=0; while(i<10) i=i+1; return i;'
+assert 55 'i=0; j=0; while(i<=10) {j=i+j; i=i+1;} return j;'
 
 assert 55 'i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j;'
 assert 3 'for (;;) return 3; return 5;'

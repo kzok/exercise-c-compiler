@@ -60,6 +60,8 @@ pub enum Node<'a> {
         inc: Option<Box<Node<'a>>>,
         then: Box<Node<'a>>,
     },
+    // block
+    Block(Vec<Box<Node<'a>>>),
 }
 
 #[derive(Debug, PartialEq)]

@@ -184,6 +184,15 @@ impl<'a> ParserContext<'a> {
     }
 
     pub fn stmt(&mut self) -> Node<'a> {
+        // block
+        if self.cursor.consume_sign("{") {
+            let mut nodes: Vec<Box<Node<'a>>> = Vec::new();
+            while !self.cursor.consume_sign("}") {
+                nodes.push(Box::new(self.stmt()));
+            }
+            return Node::Block(nodes);
+        }
+
         // if
         if self.cursor.consume_keyword(Keyword::If) {
             self.cursor.expect_sign("(");
