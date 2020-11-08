@@ -8,6 +8,8 @@ macro_rules! emit {
   ($($arg:tt)*) => ({print!("\t");p!($($arg)*);})
 }
 
+const ARGREG: &'static [&str] = &["rdi", "rsi", "rdx", "rcx", "r8", "r9"];
+
 fn gen_lvar(node: &Node) {
     match node {
         Node::LocalVar(local) => {
@@ -170,7 +172,13 @@ impl CodegenContext {
                     self.gen(node);
                 }
             }
-            Node::FunCall { name } => {
+            Node::FunCall { name, args } => {
+                for arg in args {
+                    self.gen(arg);
+                }
+                for i in (0..args.len()).rev() {
+                    emit!("pop {}", ARGREG[i]);
+                }
                 emit!("call {}", name);
                 emit!("push rax");
             }

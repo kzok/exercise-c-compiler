@@ -29,6 +29,19 @@ impl<'a> ParserContext<'a> {
         return None;
     }
 
+    fn func_args(&mut self) -> Vec<Box<Node<'a>>> {
+        let mut args = Vec::new();
+        if self.cursor.consume_sign(")") {
+            return args;
+        }
+        args.push(Box::new(self.assign()));
+        while self.cursor.consume_sign(",") {
+            args.push(Box::new(self.assign()));
+        }
+        self.cursor.expect_sign(")");
+        return args;
+    }
+
     fn primary(&mut self) -> Node<'a> {
         if self.cursor.consume_sign("(") {
             let node = self.expr();
@@ -38,8 +51,8 @@ impl<'a> ParserContext<'a> {
         if let Some(name) = self.cursor.consume_ident() {
             // funcall
             if self.cursor.consume_sign("(") {
-                self.cursor.expect_sign(")");
-                return Node::FunCall { name };
+                let args = self.func_args();
+                return Node::FunCall { name, args };
             }
 
             // known variable

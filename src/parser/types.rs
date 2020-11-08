@@ -65,6 +65,7 @@ pub enum Node<'a> {
     // 関数呼出
     FunCall {
         name: &'a str,
+        args: Vec<Box<Node<'a>>>,
     },
 }
 

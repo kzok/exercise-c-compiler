@@ -37,5 +37,5 @@ add        = mul ("+" mul | "-" mul)*
 mul        = unary ("*" unary | "/" unary)*
 unary      = ("+" | "-")? primary
 primary    = num | ident args? | "(" expr ")"
-args       = "(" ")"
+args       = "(" (assign ("," assign)*)? ")"
 ```
