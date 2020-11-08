@@ -179,7 +179,21 @@ impl CodegenContext {
                 for i in (0..args.len()).rev() {
                     emit!("pop {}", ARGREG[i]);
                 }
+
+                // NOTE: 関数呼び出しをする前にRSPが 16 の倍数でなければならないため
+                let id = self.generate_id();
+                emit!("mov rax, rsp");
+                emit!("and rax, 15");
+                emit!("jnz .L.call.{}", id);
+                emit!("mov rax, 0");
                 emit!("call {}", name);
+                emit!("jmp .L.end.{}", id);
+                p!(".L.call.{}:", id);
+                emit!("sub rsp, 8");
+                emit!("mov rax, 0");
+                emit!("call {}", name);
+                emit!("add rsp, 8");
+                p!(".L.end.{}:", id);
                 emit!("push rax");
             }
         }
