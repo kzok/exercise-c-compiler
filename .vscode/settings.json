@@ -1,7 +1,0 @@
-{
-  "files.associations": {
-    "stdbool.h": "c",
-    "9cc.h": "c",
-    "typeinfo": "c"
-  }
-}

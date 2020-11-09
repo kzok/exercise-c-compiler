@@ -1,23 +1,20 @@
-#-------------------------------------------------------------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
-#-------------------------------------------------------------------------------------------------------------
+# See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.140.1/containers/ubuntu/.devcontainer/base.Dockerfile
 
-# To fully customize the contents of this image, use the following Dockerfile instead:
-# https://github.com/microsoft/vscode-dev-containers/tree/v0.117.1/containers/ubuntu-18.04-git/.devcontainer/Dockerfile
-FROM gcc:8
+# [Choice] Ubuntu version: bionic, focal
+FROM mcr.microsoft.com/vscode/devcontainers/base:0-focal
 
-RUN apt update -y && apt install -y git cmake lcov
+SHELL ["/bin/bash", "-c"]
+ENV LC_ALL C.UTF-8
 
-# ** [Optional] Uncomment this section to install additional packages. **
-#
-# ENV DEBIAN_FRONTEND=noninteractive
-# RUN apt-get update \
-#    && apt-get -y install --no-install-recommends <your-package-list-here> \
-#    #
-#    # Clean up
-#    && apt-get autoremove -y \
-#    && apt-get clean -y \
-#    && rm -rf /var/lib/apt/lists/*
-# ENV DEBIAN_FRONTEND=dialog
+RUN apt -qq -y update && apt -qq -y install git build-essential
 
+# Rust
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
+RUN source $HOME/.cargo/env \
+  && rustup update \
+  && rustup component add rls rust-analysis rust-src
+
+# /etc/bash.bashrc
+RUN touch /etc/bash.bashrc \
+  && echo 'umask 0000' >> /etc/bash.bashrc
