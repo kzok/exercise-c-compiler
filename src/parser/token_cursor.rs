@@ -26,6 +26,10 @@ impl<'a> TokenCursor<'a> {
         };
     }
 
+    pub fn report_error(&self, msg: &str) -> ! {
+        self.current().report_error(msg);
+    }
+
     pub fn consume_sign(&mut self, sign: &str) -> bool {
         match self.current().kind {
             TokenKind::Sign(s) if s == sign => {
@@ -60,8 +64,7 @@ impl<'a> TokenCursor<'a> {
         if self.consume_sign(op) {
             return;
         }
-        self.current()
-            .report_error(&format!("'{}' ではありません", op));
+        self.report_error(&format!("'{}' ではありません", op));
     }
 
     pub fn expect_number(&mut self) -> u32 {
@@ -70,7 +73,7 @@ impl<'a> TokenCursor<'a> {
                 self.seek();
                 return n;
             }
-            _ => self.current().report_error("数ではありません"),
+            _ => self.report_error("数ではありません"),
         }
     }
 }

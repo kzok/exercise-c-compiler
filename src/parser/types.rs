@@ -70,8 +70,14 @@ pub enum Node<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Program<'a> {
+pub struct Function<'a> {
+    pub name: &'a str,
     pub stack_size: u32,
     pub locals: Vec<Rc<Variable<'a>>>,
     pub nodes: Vec<Node<'a>>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Program<'a> {
+    pub functions: Vec<Function<'a>>,
 }

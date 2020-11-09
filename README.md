@@ -22,7 +22,8 @@
 ## 文法
 
 ```
-program    = stmt*
+program    = function*
+function   = ident "(" ")" "{" stmt* "}"
 stmt       = "return" expr ";"
            | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?

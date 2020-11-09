@@ -204,23 +204,25 @@ pub fn codegen(program: &Program) {
     let mut ctx = CodegenContext::new();
 
     p!(".intel_syntax noprefix");
-    p!(".global main");
-    p!("main:");
+    for function in &program.functions {
+        p!(".global {}", function.name);
+        p!("{}:", function.name);
 
-    // 変数分の領域を確保する
-    emit!("push rbp");
-    emit!("mov rbp, rsp");
-    emit!("sub rsp, {}", program.stack_size);
+        // 変数分の領域を確保する
+        emit!("push rbp");
+        emit!("mov rbp, rsp");
+        emit!("sub rsp, {}", function.stack_size);
 
-    for node in &program.nodes {
-        ctx.gen(node);
-        // 式の評価結果としてスタックに一つの値が残っている
-        // はずなので、スタックが溢れないようにポップしておく
-        emit!("pop rax");
+        for node in &function.nodes {
+            ctx.gen(node);
+            // 式の評価結果としてスタックに一つの値が残っている
+            // はずなので、スタックが溢れないようにポップしておく
+            emit!("pop rax");
+        }
+
+        // 最後の式の結果がRAXに残っているのでそれが返り値になる
+        emit!("mov rsp, rbp");
+        emit!("pop rbp");
+        emit!("ret");
     }
-
-    // 最後の式の結果がRAXに残っているのでそれが返り値になる
-    emit!("mov rsp, rbp");
-    emit!("pop rbp");
-    emit!("ret");
 }
