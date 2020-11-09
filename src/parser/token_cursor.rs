@@ -76,4 +76,14 @@ impl<'a> TokenCursor<'a> {
             _ => self.report_error("数ではありません"),
         }
     }
+
+    pub fn expect_ident(&mut self) -> &'a str {
+        match self.current().kind {
+            TokenKind::Ident(ident) => {
+                self.seek();
+                return ident;
+            }
+            _ => self.report_error("数ではありません"),
+        }
+    }
 }

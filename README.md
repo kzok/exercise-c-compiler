@@ -23,7 +23,7 @@
 
 ```
 program    = function*
-function   = ident "(" ")" "{" stmt* "}"
+function   = ident "(" (ident ("," ident)*)? ")" "{" stmt* "}"
 stmt       = "return" expr ";"
            | "{" stmt* "}"
            | "if" "(" expr ")" stmt ("else" stmt)?

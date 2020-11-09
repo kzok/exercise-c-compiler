@@ -73,6 +73,7 @@ pub enum Node<'a> {
 pub struct Function<'a> {
     pub name: &'a str,
     pub stack_size: u32,
+    pub params: Vec<Rc<Variable<'a>>>,
     pub locals: Vec<Rc<Variable<'a>>>,
     pub nodes: Vec<Node<'a>>,
 }

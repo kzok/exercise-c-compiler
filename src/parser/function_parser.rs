@@ -16,6 +16,17 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         };
     }
 
+    fn new_localvar(&mut self, name: &'outer str) -> Rc<Variable<'outer>> {
+        let previous_offset = self
+            .locals
+            .iter()
+            .fold(0, |p, local| std::cmp::max(p, local.offset));
+        return Rc::new(Variable {
+            name: name,
+            offset: previous_offset + 8,
+        });
+    }
+
     fn find_lvar(&self, name: &str) -> Option<Rc<Variable<'outer>>> {
         for local in &self.locals {
             if local.name == name {
@@ -23,6 +34,28 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             }
         }
         return None;
+    }
+
+    fn read_func_params(&mut self) -> Vec<Rc<Variable<'outer>>> {
+        let mut params = Vec::new();
+        if self.cursor.consume_sign(")") {
+            return params;
+        }
+        let name = self.cursor.expect_ident();
+        let local = self.new_localvar(name);
+        self.locals.push(local.clone());
+        params.push(local);
+
+        while !self.cursor.consume_sign(")") {
+            self.cursor.expect_sign(",");
+
+            let name = self.cursor.expect_ident();
+            let local = self.new_localvar(name);
+            self.locals.push(local.clone());
+            params.push(local);
+        }
+
+        return params;
     }
 
     fn func_args(&mut self) -> Vec<Box<Node<'outer>>> {
@@ -58,14 +91,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             }
 
             // new variable
-            let previous_offset = self
-                .locals
-                .iter()
-                .fold(0, |p, local| std::cmp::max(p, local.offset));
-            let local = Rc::new(Variable {
-                name: name,
-                offset: previous_offset + 8,
-            });
+            let local = self.new_localvar(name);
             self.locals.push(local.clone());
             return Node::LocalVar(local);
         }
@@ -286,7 +312,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             let mut nodes = Vec::new();
 
             ctx.cursor.expect_sign("(");
-            ctx.cursor.expect_sign(")");
+            let params = ctx.read_func_params();
             ctx.cursor.expect_sign("{");
             while !ctx.cursor.consume_sign("}") {
                 nodes.push(ctx.stmt());
@@ -298,6 +324,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
                 .fold(0, |p, local| std::cmp::max(p, local.offset));
             return Some(Function {
                 name,
+                params,
                 locals: ctx.locals,
                 nodes,
                 stack_size,

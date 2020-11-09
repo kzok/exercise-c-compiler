@@ -110,27 +110,23 @@ impl CodegenContext {
             }
             Node::If { cond, then, els } => {
                 let id = self.generate_id();
+                self.gen(cond);
+                emit!("pop rax");
+                emit!("cmp rax, 0");
                 match els {
                     Some(els) => {
-                        self.gen(cond);
-                        emit!("pop rax");
-                        emit!("cmp rax, 0");
                         emit!("je  .L.else.{}", id);
                         self.gen(then);
                         emit!("jmp .L.end.{}", id);
                         p!(".L.else.{}:", id);
                         self.gen(els);
-                        p!(".L.end.{}:", id);
                     }
                     None => {
-                        self.gen(cond);
-                        emit!("pop rax");
-                        emit!("cmp rax, 0");
                         emit!("je  .L.end.{}", id);
                         self.gen(then);
-                        p!(".L.end.{}:", id);
                     }
                 }
+                p!(".L.end.{}:", id);
             }
             Node::While { cond, then } => {
                 let id = self.generate_id();
@@ -213,12 +209,18 @@ pub fn codegen(program: &Program) {
         emit!("mov rbp, rsp");
         emit!("sub rsp, {}", function.stack_size);
 
+        // 引数をスタックに移動
+        for i in 0..function.params.len() {
+            emit!("mov [rbp-{}], {}", function.params[i].offset, ARGREG[i]);
+        }
+
         for node in &function.nodes {
             ctx.gen(node);
-            // 式の評価結果としてスタックに一つの値が残っている
-            // はずなので、スタックが溢れないようにポップしておく
-            emit!("pop rax");
         }
+
+        // 式の評価結果としてスタックに一つの値が残っている
+        // はずなので、スタックが溢れないようにポップしておく
+        emit!("pop rax");
 
         // 最後の式の結果がRAXに残っているのでそれが返り値になる
         emit!("mov rsp, rbp");
