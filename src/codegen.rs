@@ -10,17 +10,6 @@ macro_rules! emit {
 
 const ARGREG: &'static [&str] = &["rdi", "rsi", "rdx", "rcx", "r8", "r9"];
 
-fn gen_lvar(node: &Node) {
-    match node {
-        Node::LocalVar(local) => {
-            emit!("mov rax, rbp");
-            emit!("sub rax, {}", local.offset);
-            emit!("push rax");
-        }
-        _ => panic!("代入の左辺値が変数ではありません"),
-    }
-}
-
 struct CodegenContext {
     label_id: u32,
 }
@@ -36,10 +25,24 @@ impl CodegenContext {
         return id;
     }
 
+    fn gen_addr(&mut self, node: &Node) {
+        match node {
+            Node::LocalVar(local) => {
+                emit!("mov rax, rbp");
+                emit!("sub rax, {}", local.offset);
+                emit!("push rax");
+            }
+            Node::Deref(node) => {
+                self.gen(node);
+            }
+            _ => panic!("代入の左辺値が変数ではありません"),
+        }
+    }
+
     fn gen_binary_operator(&mut self, op: &BinaryOperator, lhs: &Node, rhs: &Node) {
         match op {
             BinaryOperator::Assign => {
-                gen_lvar(lhs);
+                self.gen_addr(lhs);
                 self.gen(rhs);
                 emit!("pop rdi");
                 emit!("pop rax");
@@ -93,7 +96,7 @@ impl CodegenContext {
                 emit!("push {}", n);
             }
             Node::LocalVar(_) => {
-                gen_lvar(node);
+                self.gen_addr(node);
                 emit!("pop rax");
                 emit!("mov rax, [rax]");
                 emit!("push rax");
@@ -190,6 +193,15 @@ impl CodegenContext {
                 emit!("call {}", name);
                 emit!("add rsp, 8");
                 p!(".L.end.{}:", id);
+                emit!("push rax");
+            }
+            Node::Addr(node) => {
+                self.gen_addr(node);
+            }
+            Node::Deref(node) => {
+                self.gen(node);
+                emit!("pop rax");
+                emit!("mov rax, [rax]");
                 emit!("push rax");
             }
         }

@@ -109,6 +109,12 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
                 rhs: Box::new(self.primary()),
             };
         }
+        if self.cursor.consume_sign("&") {
+            return Node::Addr(Box::new(self.unary()));
+        }
+        if self.cursor.consume_sign("*") {
+            return Node::Deref(Box::new(self.unary()));
+        }
         return self.primary();
     }
 

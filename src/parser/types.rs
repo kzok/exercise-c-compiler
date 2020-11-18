@@ -67,6 +67,10 @@ pub enum Node<'a> {
         name: &'a str,
         args: Vec<Box<Node<'a>>>,
     },
+    // &val
+    Addr(Box<Node<'a>>),
+    // *ptr
+    Deref(Box<Node<'a>>),
 }
 
 #[derive(Debug, PartialEq)]
