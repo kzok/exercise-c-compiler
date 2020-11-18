@@ -11,8 +11,8 @@
 ## 参考資料
 
 - [chibicc](https://github.com/rui314/chibicc/)
-  - [historical/old](https://github.com/rui314/chibicc/commits/historical/old)
-  - [reference](https://github.com/rui314/chibicc/commits/reference)
+  - [branch: reference](https://github.com/rui314/chibicc/commits/reference)
+  - [branch: historical/old](https://github.com/rui314/chibicc/commits/historical/old)
 
 ## コマンド
 
@@ -37,6 +37,8 @@ relational = add ("<" add | "<=" add | ">" add | ">=" add)*
 add        = mul ("+" mul | "-" mul)*
 mul        = unary ("*" unary | "/" unary)*
 unary      = ("+" | "-")? primary
+           | "*" unary
+           | "&" unary
 primary    = num | ident args? | "(" expr ")"
 args       = "(" (assign ("," assign)*)? ")"
 ```

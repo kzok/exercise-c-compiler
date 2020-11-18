@@ -10,17 +10,6 @@ macro_rules! emit {
 
 const ARGREG: &'static [&str] = &["rdi", "rsi", "rdx", "rcx", "r8", "r9"];
 
-fn gen_lvar(node: &Node) {
-    match node {
-        Node::LocalVar(local) => {
-            emit!("mov rax, rbp");
-            emit!("sub rax, {}", local.offset);
-            emit!("push rax");
-        }
-        _ => panic!("代入の左辺値が変数ではありません"),
-    }
-}
-
 struct CodegenContext {
     label_id: u32,
 }
@@ -30,16 +19,30 @@ impl CodegenContext {
         return CodegenContext { label_id: 0 };
     }
 
-    fn generate_id(&mut self) -> u32 {
+    fn generate_label_id(&mut self) -> u32 {
         let id = self.label_id;
         self.label_id += 1;
         return id;
     }
 
+    fn gen_addr(&mut self, node: &Node) {
+        match node {
+            Node::LocalVar(local) => {
+                emit!("mov rax, rbp");
+                emit!("sub rax, {}", local.offset);
+                emit!("push rax");
+            }
+            Node::Deref(node) => {
+                self.gen(node);
+            }
+            _ => panic!("代入の左辺値が変数ではありません"),
+        }
+    }
+
     fn gen_binary_operator(&mut self, op: &BinaryOperator, lhs: &Node, rhs: &Node) {
         match op {
             BinaryOperator::Assign => {
-                gen_lvar(lhs);
+                self.gen_addr(lhs);
                 self.gen(rhs);
                 emit!("pop rdi");
                 emit!("pop rax");
@@ -93,7 +96,7 @@ impl CodegenContext {
                 emit!("push {}", n);
             }
             Node::LocalVar(_) => {
-                gen_lvar(node);
+                self.gen_addr(node);
                 emit!("pop rax");
                 emit!("mov rax, [rax]");
                 emit!("push rax");
@@ -109,35 +112,35 @@ impl CodegenContext {
                 self.gen_binary_operator(op, lhs, rhs);
             }
             Node::If { cond, then, els } => {
-                let id = self.generate_id();
+                let label_id = self.generate_label_id();
                 self.gen(cond);
                 emit!("pop rax");
                 emit!("cmp rax, 0");
                 match els {
                     Some(els) => {
-                        emit!("je  .L.else.{}", id);
+                        emit!("je  .L.else.{}", label_id);
                         self.gen(then);
-                        emit!("jmp .L.end.{}", id);
-                        p!(".L.else.{}:", id);
+                        emit!("jmp .L.end.{}", label_id);
+                        p!(".L.else.{}:", label_id);
                         self.gen(els);
                     }
                     None => {
-                        emit!("je  .L.end.{}", id);
+                        emit!("je  .L.end.{}", label_id);
                         self.gen(then);
                     }
                 }
-                p!(".L.end.{}:", id);
+                p!(".L.end.{}:", label_id);
             }
             Node::While { cond, then } => {
-                let id = self.generate_id();
-                p!(".L.begin.{}:", id);
+                let label_id = self.generate_label_id();
+                p!(".L.begin.{}:", label_id);
                 self.gen(cond);
                 emit!("pop rax");
                 emit!("cmp rax, 0");
-                emit!("je  .L.end.{}", id);
+                emit!("je  .L.end.{}", label_id);
                 self.gen(then);
-                emit!("jmp .L.begin.{}", id);
-                p!(".L.end.{}:", id);
+                emit!("jmp .L.begin.{}", label_id);
+                p!(".L.end.{}:", label_id);
             }
             Node::For {
                 init,
@@ -145,23 +148,23 @@ impl CodegenContext {
                 inc,
                 then,
             } => {
-                let id = self.generate_id();
+                let label_id = self.generate_label_id();
                 if let Some(init) = init {
                     self.gen(init);
                 }
-                p!(".L.begin.{}:", id);
+                p!(".L.begin.{}:", label_id);
                 if let Some(cond) = cond {
                     self.gen(cond);
                     emit!("pop rax");
                     emit!("cmp rax, 0");
-                    emit!("je  .L.end.{}", id);
+                    emit!("je  .L.end.{}", label_id);
                 }
                 self.gen(then);
                 if let Some(inc) = inc {
                     self.gen(inc);
                 }
-                emit!("jmp .L.begin.{}", id);
-                p!(".L.end.{}:", id);
+                emit!("jmp .L.begin.{}", label_id);
+                p!(".L.end.{}:", label_id);
             }
             Node::Block(nodes) => {
                 for node in nodes {
@@ -177,19 +180,28 @@ impl CodegenContext {
                 }
 
                 // NOTE: 関数呼び出しをする前にRSPが 16 の倍数でなければならないため
-                let id = self.generate_id();
+                let label_id = self.generate_label_id();
                 emit!("mov rax, rsp");
                 emit!("and rax, 15");
-                emit!("jnz .L.call.{}", id);
+                emit!("jnz .L.call.{}", label_id);
                 emit!("mov rax, 0");
                 emit!("call {}", name);
-                emit!("jmp .L.end.{}", id);
-                p!(".L.call.{}:", id);
+                emit!("jmp .L.end.{}", label_id);
+                p!(".L.call.{}:", label_id);
                 emit!("sub rsp, 8");
                 emit!("mov rax, 0");
                 emit!("call {}", name);
                 emit!("add rsp, 8");
-                p!(".L.end.{}:", id);
+                p!(".L.end.{}:", label_id);
+                emit!("push rax");
+            }
+            Node::Addr(node) => {
+                self.gen_addr(node);
+            }
+            Node::Deref(node) => {
+                self.gen(node);
+                emit!("pop rax");
+                emit!("mov rax, [rax]");
                 emit!("push rax");
             }
         }

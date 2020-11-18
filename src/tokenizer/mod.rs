@@ -4,7 +4,7 @@ use std::vec::Vec;
 pub use types::{Keyword, Token, TokenKind};
 
 const SIGNES: &'static [&str] = &[
-    "==", "!=", "<=", ">=", "<", ">", "(", ")", "+", "-", "*", "/", "=", ";", "{", "}", ",",
+    "==", "!=", "<=", ">=", "<", ">", "(", ")", "+", "-", "*", "/", "&", "=", ";", "{", "}", ",",
 ];
 
 const KEYWORDS: &'static [(&str, Keyword)] = &[
