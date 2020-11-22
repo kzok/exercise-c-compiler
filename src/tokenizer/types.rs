@@ -5,6 +5,7 @@ pub enum Keyword {
     Else,
     While,
     For,
+    Int,
 }
 
 #[derive(Debug, PartialEq)]

@@ -13,6 +13,7 @@ const KEYWORDS: &'static [(&str, Keyword)] = &[
     ("else", Keyword::Else),
     ("while", Keyword::While),
     ("for", Keyword::For),
+    ("int", Keyword::Int),
 ];
 
 fn is_alpha(c: &char) -> bool {
