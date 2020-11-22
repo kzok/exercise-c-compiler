@@ -1,4 +1,5 @@
 use crate::tokenizer::{Keyword, Token, TokenKind};
+use std::cmp::max;
 use std::vec::Vec;
 
 pub struct TokenCursor<'a> {
@@ -13,6 +14,10 @@ impl<'a> TokenCursor<'a> {
 
     pub fn current(&self) -> &Token<'a> {
         return &self.tokens[self.index];
+    }
+
+    pub fn previous(&self) -> &Token<'a> {
+        return &self.tokens[max(self.index - 1, 0)];
     }
 
     fn seek(&mut self) {

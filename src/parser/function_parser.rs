@@ -106,8 +106,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             self.cursor.expect_sign(")");
             return node;
         }
-        let maybe_name = self.cursor.consume_ident();
-        if let Some(name) = maybe_name {
+        if let Some(name) = self.cursor.consume_ident() {
             // funcall
             if self.cursor.consume_sign("(") {
                 let args = self.func_args();
@@ -119,9 +118,9 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
                 return make_node(NodeKind::LocalVar(local));
             }
 
-            // new variable
-            let local = self.new_localvar(name);
-            return make_node(NodeKind::LocalVar(local));
+            self.cursor
+                .previous()
+                .report_error(&format!("未定義の変数 \"{}\" を参照しました。", name));
         }
         return make_node(NodeKind::Number(self.cursor.expect_number()));
     }

@@ -70,10 +70,10 @@ assert 1 "int main() { return 1>=0; }"
 assert 1 "int main() { return 1>=1; }"
 assert 0 "int main() { return 1>=2; }"
 
-assert 3 "int main() { a=3; return a; }"
-assert 8 "int main() { a=3; z=5; return a+z; }"
-assert 6 "int main() { a=b=3; return a+b; }"
-assert 6 "int main() { foo=1; bar=2+3; return foo+bar; }"
+assert 3 "int main() { int a=3; return a; }"
+assert 8 "int main() { int a=3; int z=5; return a+z; }"
+assert 6 "int main() { int a; int b; a=b=3; return a+b; }"
+assert 6 "int main() { int foo=1; int bar=2+3; return foo+bar; }"
 
 assert 3 "int main() { {1; {2;} return 3;} }"
 
@@ -82,10 +82,10 @@ assert 3 "int main() { if (1-1) return 2; return 3; }"
 assert 2 "int main() { if (1) return 2; return 3; }"
 assert 2 "int main() { if (2-1) return 2; return 3; }"
 
-assert 10 "int main() { i=0; while(i<10) i=i+1; return i; }"
-assert 55 "int main() { i=0; j=0; while(i<=10) {j=i+j; i=i+1;} return j; }"
+assert 10 "int main() { int i=0; while(i<10) i=i+1; return i; }"
+assert 55 "int main() { int i=0; int j=0; while(i<=10) {j=i+j; i=i+1;} return j; }"
 
-assert 55 "int main() { i=0; j=0; for (i=0; i<=10; i=i+1) j=i+j; return j; }"
+assert 55 "int main() { int i=0; int j=0; for (i=0; i<=10; i=i+1) j=i+j; return j; }"
 assert 3 "int main() { for (;;) return 3; return 5; }"
 
 assert 3 "int main() { return ret3(); }"
@@ -98,12 +98,12 @@ assert 7 "int main() { return add2(3,4); } int add2(int x,int y) { return x+y; }
 assert 1 "int main() { return sub2(4,3); } int sub2(int x,int y) { return x-y; }"
 assert 55 "int main() { return fib(9); } int fib(int x) { if (x<=1) return 1; return fib(x-1) + fib(x-2); }"
 
-assert 3 "int main() { x=3; return *&x; }"
-assert 3 "int main() { x=3; y=&x; z=&y; return **z; }"
-assert 5 "int main() { x=3; y=5; return *(&x-8); }"
-assert 3 "int main() { x=3; y=5; return *(&y+8); }"
-assert 5 "int main() { x=3; y=&x; *y=5; return x; }"
-assert 7 "int main() { x=3; y=5; *(&x-8)=7; return y; }"
-assert 7 "int main() { x=3; y=5; *(&y+8)=7; return x; }"
+assert 3 "int main() { int x=3; return *&x; }"
+assert 3 "int main() { int x=3; int y=&x; int z=&y; return **z; }"
+assert 5 "int main() { int x=3; int y=5; return *(&x-8); }"
+assert 3 "int main() { int x=3; int y=5; return *(&y+8); }"
+assert 5 "int main() { int x=3; int y=&x; *y=5; return x; }"
+assert 7 "int main() { int x=3; int y=5; *(&x-8)=7; return y; }"
+assert 7 "int main() { int x=3; int y=5; *(&y+8)=7; return x; }"
 
 echo -e "\e[32mAll tests passed!\e[0m"
