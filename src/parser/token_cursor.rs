@@ -60,6 +60,13 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
+    pub fn expect_keyword(&mut self, keyword: Keyword) {
+        if self.consume_keyword(keyword) {
+            return;
+        }
+        self.report_error(&format!("'{}' ではありません", keyword));
+    }
+
     pub fn expect_sign(&mut self, op: &str) {
         if self.consume_sign(op) {
             return;

@@ -40,11 +40,16 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         return None;
     }
 
+    fn base_type(&mut self) {
+        self.cursor.expect_keyword(Keyword::Int);
+    }
+
     fn read_func_params(&mut self) -> Vec<Rc<Variable<'outer>>> {
         let mut params = Vec::new();
         if self.cursor.consume_sign(")") {
             return params;
         }
+        self.base_type();
         let name = self.cursor.expect_ident();
         let local = self.new_localvar(name);
         self.locals.push(local.clone());
@@ -52,7 +57,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         while !self.cursor.consume_sign(")") {
             self.cursor.expect_sign(",");
-
+            self.base_type();
             let name = self.cursor.expect_ident();
             let local = self.new_localvar(name);
             self.locals.push(local.clone());
@@ -318,6 +323,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
     pub fn parse(cursor: &'local mut TokenCursor<'outer>) -> Option<Function<'outer>> {
         let mut ctx = FunctionParser::new(cursor);
+        ctx.base_type();
         return ctx.cursor.consume_ident().and_then(|name| {
             let mut nodes = Vec::new();
 
