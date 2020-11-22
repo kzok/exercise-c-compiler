@@ -11,7 +11,7 @@ impl<'a> TokenCursor<'a> {
         return TokenCursor { tokens, index: 0 };
     }
 
-    fn current(&self) -> &Token<'a> {
+    pub fn current(&self) -> &Token<'a> {
         return &self.tokens[self.index];
     }
 

@@ -92,6 +92,7 @@ impl CodegenContext {
 
     pub fn gen(&mut self, node: &Node) {
         match &node.kind {
+            NodeKind::Null => {}
             NodeKind::Number(n) => {
                 emit!("push {}", n);
             }

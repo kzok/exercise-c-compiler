@@ -30,6 +30,8 @@ pub struct Variable<'a> {
 
 #[derive(Debug, PartialEq)]
 pub enum NodeKind<'a> {
+    // 何もしないノード
+    Null,
     // 整数
     Number(u32),
     // ローカル変数

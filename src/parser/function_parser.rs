@@ -1,6 +1,6 @@
 use super::token_cursor::TokenCursor;
 use super::types::{BinaryOperator, Function, Node, NodeKind, Variable};
-use crate::tokenizer::Keyword;
+use crate::tokenizer::{Keyword, TokenKind};
 use std::rc::Rc;
 
 pub struct FunctionParser<'local, 'outer: 'local> {
@@ -25,10 +25,12 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             .locals
             .iter()
             .fold(0, |p, local| std::cmp::max(p, local.offset));
-        return Rc::new(Variable {
+        let local = Rc::new(Variable {
             name: name,
             offset: previous_offset + 8,
         });
+        self.locals.push(local.clone());
+        return local;
     }
 
     fn find_lvar(&self, name: &str) -> Option<Rc<Variable<'outer>>> {
@@ -80,6 +82,24 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         return args;
     }
 
+    fn declaretion(&mut self) -> Node<'outer> {
+        self.base_type();
+        let name = self.cursor.expect_ident();
+        let var = self.new_localvar(name);
+        if self.cursor.consume_sign(";") {
+            return make_node(NodeKind::Null);
+        }
+        self.cursor.expect_sign("=");
+        let lhs = Box::new(make_node(NodeKind::LocalVar(var)));
+        let rhs = Box::new(self.expr());
+        self.cursor.expect_sign(";");
+        return make_node(NodeKind::Binary {
+            op: BinaryOperator::Assign,
+            lhs,
+            rhs,
+        });
+    }
+
     fn primary(&mut self) -> Node<'outer> {
         if self.cursor.consume_sign("(") {
             let node = self.expr();
@@ -101,7 +121,6 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
             // new variable
             let local = self.new_localvar(name);
-            self.locals.push(local.clone());
             return make_node(NodeKind::LocalVar(local));
         }
         return make_node(NodeKind::Number(self.cursor.expect_number()));
@@ -314,6 +333,11 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             let node = make_node(NodeKind::Return(Box::new(self.expr())));
             self.cursor.expect_sign(";");
             return node;
+        }
+
+        // declaretion
+        if self.cursor.current().kind == TokenKind::Keyword(Keyword::Int) {
+            return self.declaretion();
         }
 
         let node = self.expr();
