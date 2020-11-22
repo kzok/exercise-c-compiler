@@ -5,6 +5,29 @@ pub enum Keyword {
     Else,
     While,
     For,
+    Int,
+}
+
+impl Keyword {
+    pub const PAIRS: &'static [(&'static str, Keyword)] = &[
+        ("return", Keyword::Return),
+        ("if", Keyword::If),
+        ("else", Keyword::Else),
+        ("while", Keyword::While),
+        ("for", Keyword::For),
+        ("int", Keyword::Int),
+    ];
+}
+
+impl std::fmt::Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for (s, v) in Keyword::PAIRS {
+            if self == v {
+                return write!(f, "{}", s);
+            }
+        }
+        panic!("Unexpected keyword token: \"{:?}\"", self);
+    }
 }
 
 #[derive(Debug, PartialEq)]

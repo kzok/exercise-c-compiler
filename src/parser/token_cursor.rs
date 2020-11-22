@@ -1,4 +1,5 @@
 use crate::tokenizer::{Keyword, Token, TokenKind};
+use std::cmp::max;
 use std::vec::Vec;
 
 pub struct TokenCursor<'a> {
@@ -11,8 +12,12 @@ impl<'a> TokenCursor<'a> {
         return TokenCursor { tokens, index: 0 };
     }
 
-    fn current(&self) -> &Token<'a> {
+    pub fn current(&self) -> &Token<'a> {
         return &self.tokens[self.index];
+    }
+
+    pub fn previous(&self) -> &Token<'a> {
+        return &self.tokens[max(self.index - 1, 0)];
     }
 
     fn seek(&mut self) {
@@ -58,6 +63,13 @@ impl<'a> TokenCursor<'a> {
             }
             _ => return None,
         }
+    }
+
+    pub fn expect_keyword(&mut self, keyword: Keyword) {
+        if self.consume_keyword(keyword) {
+            return;
+        }
+        self.report_error(&format!("'{}' ではありません", keyword));
     }
 
     pub fn expect_sign(&mut self, op: &str) {

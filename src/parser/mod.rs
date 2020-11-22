@@ -7,7 +7,7 @@ use crate::tokenizer::Token;
 
 use std::vec::Vec;
 use token_cursor::TokenCursor;
-pub use types::{BinaryOperator, Function, Node, Program, Variable};
+pub use types::{BinaryOperator, Function, Node, NodeKind, Program, Variable};
 
 pub fn parse<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
     let mut functions: Vec<Function> = Vec::new();

@@ -1,11 +1,15 @@
 use super::token_cursor::TokenCursor;
-use super::types::{BinaryOperator, Function, Node, Variable};
-use crate::tokenizer::Keyword;
+use super::types::{BinaryOperator, Function, Node, NodeKind, Variable};
+use crate::tokenizer::{Keyword, TokenKind};
 use std::rc::Rc;
 
 pub struct FunctionParser<'local, 'outer: 'local> {
     locals: Vec<Rc<Variable<'outer>>>,
     cursor: &'local mut TokenCursor<'outer>,
+}
+
+fn make_node<'a>(kind: NodeKind<'a>) -> Node<'a> {
+    return Node { kind };
 }
 
 impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
@@ -21,10 +25,12 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             .locals
             .iter()
             .fold(0, |p, local| std::cmp::max(p, local.offset));
-        return Rc::new(Variable {
+        let local = Rc::new(Variable {
             name: name,
             offset: previous_offset + 8,
         });
+        self.locals.push(local.clone());
+        return local;
     }
 
     fn find_lvar(&self, name: &str) -> Option<Rc<Variable<'outer>>> {
@@ -36,11 +42,16 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         return None;
     }
 
+    fn base_type(&mut self) {
+        self.cursor.expect_keyword(Keyword::Int);
+    }
+
     fn read_func_params(&mut self) -> Vec<Rc<Variable<'outer>>> {
         let mut params = Vec::new();
         if self.cursor.consume_sign(")") {
             return params;
         }
+        self.base_type();
         let name = self.cursor.expect_ident();
         let local = self.new_localvar(name);
         self.locals.push(local.clone());
@@ -48,7 +59,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         while !self.cursor.consume_sign(")") {
             self.cursor.expect_sign(",");
-
+            self.base_type();
             let name = self.cursor.expect_ident();
             let local = self.new_localvar(name);
             self.locals.push(local.clone());
@@ -71,31 +82,47 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         return args;
     }
 
+    fn declaretion(&mut self) -> Node<'outer> {
+        self.base_type();
+        let name = self.cursor.expect_ident();
+        let var = self.new_localvar(name);
+        if self.cursor.consume_sign(";") {
+            return make_node(NodeKind::Null);
+        }
+        self.cursor.expect_sign("=");
+        let lhs = Box::new(make_node(NodeKind::LocalVar(var)));
+        let rhs = Box::new(self.expr());
+        self.cursor.expect_sign(";");
+        return make_node(NodeKind::Binary {
+            op: BinaryOperator::Assign,
+            lhs,
+            rhs,
+        });
+    }
+
     fn primary(&mut self) -> Node<'outer> {
         if self.cursor.consume_sign("(") {
             let node = self.expr();
             self.cursor.expect_sign(")");
             return node;
         }
-        let maybe_name = self.cursor.consume_ident();
-        if let Some(name) = maybe_name {
+        if let Some(name) = self.cursor.consume_ident() {
             // funcall
             if self.cursor.consume_sign("(") {
                 let args = self.func_args();
-                return Node::FunCall { name, args };
+                return make_node(NodeKind::FunCall { name, args });
             }
 
             // known variable
             if let Some(local) = self.find_lvar(name) {
-                return Node::LocalVar(local);
+                return make_node(NodeKind::LocalVar(local));
             }
 
-            // new variable
-            let local = self.new_localvar(name);
-            self.locals.push(local.clone());
-            return Node::LocalVar(local);
+            self.cursor
+                .previous()
+                .report_error(&format!("未定義の変数 \"{}\" を参照しました。", name));
         }
-        return Node::Number(self.cursor.expect_number());
+        return make_node(NodeKind::Number(self.cursor.expect_number()));
     }
 
     fn unary(&mut self) -> Node<'outer> {
@@ -103,17 +130,17 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             return self.primary();
         }
         if self.cursor.consume_sign("-") {
-            return Node::Binary {
+            return make_node(NodeKind::Binary {
                 op: BinaryOperator::Sub,
-                lhs: Box::new(Node::Number(0)),
+                lhs: Box::new(make_node(NodeKind::Number(0))),
                 rhs: Box::new(self.primary()),
-            };
+            });
         }
         if self.cursor.consume_sign("&") {
-            return Node::Addr(Box::new(self.unary()));
+            return make_node(NodeKind::Addr(Box::new(self.unary())));
         }
         if self.cursor.consume_sign("*") {
-            return Node::Deref(Box::new(self.unary()));
+            return make_node(NodeKind::Deref(Box::new(self.unary())));
         }
         return self.primary();
     }
@@ -123,17 +150,17 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         loop {
             if self.cursor.consume_sign("*") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::Mul,
                     lhs: Box::new(node),
                     rhs: Box::new(self.unary()),
-                };
+                });
             } else if self.cursor.consume_sign("/") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::Div,
                     lhs: Box::new(node),
                     rhs: Box::new(self.unary()),
-                };
+                });
             } else {
                 return node;
             }
@@ -145,17 +172,17 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         loop {
             if self.cursor.consume_sign("+") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::Add,
                     lhs: Box::new(node),
                     rhs: Box::new(self.mul()),
-                };
+                });
             } else if self.cursor.consume_sign("-") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::Sub,
                     lhs: Box::new(node),
                     rhs: Box::new(self.mul()),
-                };
+                });
             } else {
                 return node;
             }
@@ -167,29 +194,29 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         loop {
             if self.cursor.consume_sign("<") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::LessThan,
                     lhs: Box::new(node),
                     rhs: Box::new(self.add()),
-                };
+                });
             } else if self.cursor.consume_sign("<=") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::LessThanEqual,
                     lhs: Box::new(node),
                     rhs: Box::new(self.add()),
-                };
+                });
             } else if self.cursor.consume_sign(">") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::LessThan,
                     lhs: Box::new(self.add()),
                     rhs: Box::new(node),
-                };
+                });
             } else if self.cursor.consume_sign(">=") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::LessThanEqual,
                     lhs: Box::new(self.add()),
                     rhs: Box::new(node),
-                };
+                });
             } else {
                 return node;
             }
@@ -201,17 +228,17 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         loop {
             if self.cursor.consume_sign("==") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::Equal,
                     lhs: Box::new(node),
                     rhs: Box::new(self.relational()),
-                };
+                });
             } else if self.cursor.consume_sign("!=") {
-                node = Node::Binary {
+                node = make_node(NodeKind::Binary {
                     op: BinaryOperator::NotEqual,
                     lhs: Box::new(node),
                     rhs: Box::new(self.relational()),
-                };
+                });
             } else {
                 return node;
             }
@@ -221,11 +248,11 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     fn assign(&mut self) -> Node<'outer> {
         let mut node = self.equality();
         if self.cursor.consume_sign("=") {
-            node = Node::Binary {
+            node = make_node(NodeKind::Binary {
                 op: BinaryOperator::Assign,
                 lhs: Box::new(node),
                 rhs: Box::new(self.assign()),
-            };
+            });
         }
         return node;
     }
@@ -241,7 +268,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             while !self.cursor.consume_sign("}") {
                 nodes.push(Box::new(self.stmt()));
             }
-            return Node::Block(nodes);
+            return make_node(NodeKind::Block(nodes));
         }
 
         // if
@@ -255,7 +282,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             } else {
                 None
             };
-            return Node::If { cond, then, els };
+            return make_node(NodeKind::If { cond, then, els });
         }
 
         // while
@@ -264,7 +291,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             let cond = Box::new(self.expr());
             self.cursor.expect_sign(")");
             let then = Box::new(self.stmt());
-            return Node::While { cond, then };
+            return make_node(NodeKind::While { cond, then });
         }
 
         // for
@@ -292,19 +319,24 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
                 None
             };
             let then = Box::new(self.stmt());
-            return Node::For {
+            return make_node(NodeKind::For {
                 init,
                 cond,
                 inc,
                 then,
-            };
+            });
         }
 
         // return
         if self.cursor.consume_keyword(Keyword::Return) {
-            let node = Node::Return(Box::new(self.expr()));
+            let node = make_node(NodeKind::Return(Box::new(self.expr())));
             self.cursor.expect_sign(";");
             return node;
+        }
+
+        // declaretion
+        if self.cursor.current().kind == TokenKind::Keyword(Keyword::Int) {
+            return self.declaretion();
         }
 
         let node = self.expr();
@@ -314,6 +346,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
     pub fn parse(cursor: &'local mut TokenCursor<'outer>) -> Option<Function<'outer>> {
         let mut ctx = FunctionParser::new(cursor);
+        ctx.base_type();
         return ctx.cursor.consume_ident().and_then(|name| {
             let mut nodes = Vec::new();
 

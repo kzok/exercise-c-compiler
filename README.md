@@ -22,23 +22,28 @@
 ## 文法
 
 ```
-program    = function*
-function   = ident "(" (ident ("," ident)*)? ")" "{" stmt* "}"
-stmt       = "return" expr ";"
-           | "{" stmt* "}"
-           | "if" "(" expr ")" stmt ("else" stmt)?
-           | "while" "(" expr ")" stmt
-           | "for" "(" expr? ";" expr? ";" expr? ")" stmt
-           | expr ";"
-expr       = assign
-assign     = equality ("=" assign)?
-equality   = relational ("==" relational | "!=" relational)*
-relational = add ("<" add | "<=" add | ">" add | ">=" add)*
-add        = mul ("+" mul | "-" mul)*
-mul        = unary ("*" unary | "/" unary)*
-unary      = ("+" | "-")? primary
-           | "*" unary
-           | "&" unary
-primary    = num | ident args? | "(" expr ")"
-args       = "(" (assign ("," assign)*)? ")"
+program     = function*
+function    = basetype ident "(" params? ")" "{" stmt* "}"
+params      = param ("," param)*
+param       = basetype ident
+stmt        = "return" expr ";"
+            | "{" stmt* "}"
+            | "if" "(" expr ")" stmt ("else" stmt)?
+            | "while" "(" expr ")" stmt
+            | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+            | declaretion
+            | expr ";"
+declaretion = basetype ident ("=" expr)? ";"
+expr        = assign
+assign      = equality ("=" assign)?
+equality    = relational ("==" relational | "!=" relational)*
+relational  = add ("<" add | "<=" add | ">" add | ">=" add)*
+add         = mul ("+" mul | "-" mul)*
+mul         = unary ("*" unary | "/" unary)*
+unary       = ("+" | "-")? primary
+            | "*" unary
+            | "&" unary
+primary     = num | funcall | "(" expr ")"
+funcall     = ident ("(" (assign ("," assign)*)? ")")?
+basetype    = "int"
 ```

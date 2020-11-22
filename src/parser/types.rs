@@ -29,7 +29,9 @@ pub struct Variable<'a> {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Node<'a> {
+pub enum NodeKind<'a> {
+    // 何もしないノード
+    Null,
     // 整数
     Number(u32),
     // ローカル変数
@@ -71,6 +73,11 @@ pub enum Node<'a> {
     Addr(Box<Node<'a>>),
     // *ptr
     Deref(Box<Node<'a>>),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Node<'a> {
+    pub kind: NodeKind<'a>,
 }
 
 #[derive(Debug, PartialEq)]
