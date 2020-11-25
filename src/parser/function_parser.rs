@@ -1,5 +1,5 @@
 use super::token_cursor::TokenCursor;
-use super::types::{BinaryOperator, Function, Node, NodeKind, Variable};
+use super::types::{Function, Node, NodeKind, Variable};
 use crate::tokenizer::{Keyword, TokenKind};
 use std::rc::Rc;
 
@@ -93,11 +93,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         let lhs = Box::new(make_node(NodeKind::LocalVar(var)));
         let rhs = Box::new(self.expr());
         self.cursor.expect_sign(";");
-        return make_node(NodeKind::Binary {
-            op: BinaryOperator::Assign,
-            lhs,
-            rhs,
-        });
+        return make_node(NodeKind::Assign { lhs, rhs });
     }
 
     fn primary(&mut self) -> Node<'outer> {
@@ -130,8 +126,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             return self.primary();
         }
         if self.cursor.consume_sign("-") {
-            return make_node(NodeKind::Binary {
-                op: BinaryOperator::Sub,
+            return make_node(NodeKind::Sub {
                 lhs: Box::new(make_node(NodeKind::Number(0))),
                 rhs: Box::new(self.primary()),
             });
@@ -150,14 +145,12 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         loop {
             if self.cursor.consume_sign("*") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::Mul,
+                node = make_node(NodeKind::Mul {
                     lhs: Box::new(node),
                     rhs: Box::new(self.unary()),
                 });
             } else if self.cursor.consume_sign("/") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::Div,
+                node = make_node(NodeKind::Div {
                     lhs: Box::new(node),
                     rhs: Box::new(self.unary()),
                 });
@@ -172,14 +165,12 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         loop {
             if self.cursor.consume_sign("+") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::Add,
+                node = make_node(NodeKind::Add {
                     lhs: Box::new(node),
                     rhs: Box::new(self.mul()),
                 });
             } else if self.cursor.consume_sign("-") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::Sub,
+                node = make_node(NodeKind::Sub {
                     lhs: Box::new(node),
                     rhs: Box::new(self.mul()),
                 });
@@ -194,26 +185,22 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         loop {
             if self.cursor.consume_sign("<") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::LessThan,
+                node = make_node(NodeKind::LessThan {
                     lhs: Box::new(node),
                     rhs: Box::new(self.add()),
                 });
             } else if self.cursor.consume_sign("<=") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::LessThanEqual,
+                node = make_node(NodeKind::LessThanEqual {
                     lhs: Box::new(node),
                     rhs: Box::new(self.add()),
                 });
             } else if self.cursor.consume_sign(">") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::LessThan,
+                node = make_node(NodeKind::LessThan {
                     lhs: Box::new(self.add()),
                     rhs: Box::new(node),
                 });
             } else if self.cursor.consume_sign(">=") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::LessThanEqual,
+                node = make_node(NodeKind::LessThanEqual {
                     lhs: Box::new(self.add()),
                     rhs: Box::new(node),
                 });
@@ -228,14 +215,12 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
         loop {
             if self.cursor.consume_sign("==") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::Equal,
+                node = make_node(NodeKind::Equal {
                     lhs: Box::new(node),
                     rhs: Box::new(self.relational()),
                 });
             } else if self.cursor.consume_sign("!=") {
-                node = make_node(NodeKind::Binary {
-                    op: BinaryOperator::NotEqual,
+                node = make_node(NodeKind::NotEqual {
                     lhs: Box::new(node),
                     rhs: Box::new(self.relational()),
                 });
@@ -248,8 +233,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     fn assign(&mut self) -> Node<'outer> {
         let mut node = self.equality();
         if self.cursor.consume_sign("=") {
-            node = make_node(NodeKind::Binary {
-                op: BinaryOperator::Assign,
+            node = make_node(NodeKind::Assign {
                 lhs: Box::new(node),
                 rhs: Box::new(self.assign()),
             });

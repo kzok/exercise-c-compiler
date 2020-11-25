@@ -1,28 +1,6 @@
 use std::rc::Rc;
 
 #[derive(Debug, PartialEq)]
-pub enum BinaryOperator {
-    // +
-    Add,
-    // -
-    Sub,
-    // *
-    Mul,
-    // /
-    Div,
-    // ==
-    Equal,
-    // !=
-    NotEqual,
-    // <
-    LessThan,
-    // <=
-    LessThanEqual,
-    // =
-    Assign,
-}
-
-#[derive(Debug, PartialEq)]
 pub struct Variable<'a> {
     pub name: &'a str,
     pub offset: u32,
@@ -34,44 +12,83 @@ pub enum NodeKind<'a> {
     Null,
     // 整数
     Number(u32),
-    // ローカル変数
-    LocalVar(Rc<Variable<'a>>),
-    // 二項演算子
-    Binary {
-        op: BinaryOperator,
+    // "+"
+    Add {
         lhs: Box<Node<'a>>,
         rhs: Box<Node<'a>>,
     },
-    // return 文
+    // "-"
+    Sub {
+        lhs: Box<Node<'a>>,
+        rhs: Box<Node<'a>>,
+    },
+    // "*"
+    Mul {
+        lhs: Box<Node<'a>>,
+        rhs: Box<Node<'a>>,
+    },
+    // "/"
+    Div {
+        lhs: Box<Node<'a>>,
+        rhs: Box<Node<'a>>,
+    },
+    // "=="
+    Equal {
+        lhs: Box<Node<'a>>,
+        rhs: Box<Node<'a>>,
+    },
+    // "!="
+    NotEqual {
+        lhs: Box<Node<'a>>,
+        rhs: Box<Node<'a>>,
+    },
+    // "<"
+    LessThan {
+        lhs: Box<Node<'a>>,
+        rhs: Box<Node<'a>>,
+    },
+    // "<="
+    LessThanEqual {
+        lhs: Box<Node<'a>>,
+        rhs: Box<Node<'a>>,
+    },
+    // "="
+    Assign {
+        lhs: Box<Node<'a>>,
+        rhs: Box<Node<'a>>,
+    },
+    // local variable
+    LocalVar(Rc<Variable<'a>>),
+    // "return"
     Return(Box<Node<'a>>),
-    // if
+    // "if"
     If {
         cond: Box<Node<'a>>,
         then: Box<Node<'a>>,
         els: Option<Box<Node<'a>>>,
     },
-    // while
+    // "while"
     While {
         cond: Box<Node<'a>>,
         then: Box<Node<'a>>,
     },
-    // for
+    // "for"
     For {
         init: Option<Box<Node<'a>>>,
         cond: Option<Box<Node<'a>>>,
         inc: Option<Box<Node<'a>>>,
         then: Box<Node<'a>>,
     },
-    // block
+    // "{" "}"
     Block(Vec<Box<Node<'a>>>),
-    // 関数呼出
+    // "func()"
     FunCall {
         name: &'a str,
         args: Vec<Box<Node<'a>>>,
     },
-    // &val
+    // "&val"
     Addr(Box<Node<'a>>),
-    // *ptr
+    // "*ptr"
     Deref(Box<Node<'a>>),
 }
 

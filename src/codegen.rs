@@ -1,4 +1,4 @@
-use crate::parser::{BinaryOperator, Node, NodeKind, Program};
+use crate::parser::{Node, NodeKind, Program};
 
 macro_rules! p {
   ($($arg:tt)*) => ({println!($($arg)*);})
@@ -39,54 +39,12 @@ impl CodegenContext {
         }
     }
 
-    fn gen_binary_operator(&mut self, op: &BinaryOperator, lhs: &Node, rhs: &Node) {
-        match op {
-            BinaryOperator::Assign => {
-                self.gen_addr(lhs);
-                self.gen(rhs);
-                emit!("pop rdi");
-                emit!("pop rax");
-                emit!("mov [rax], rdi");
-                emit!("push rdi");
-                return;
-            }
-            _ => (),
-        }
-
+    pub fn gen_binary_ops(&mut self, lhs: &Box<Node>, rhs: &Box<Node>, f: fn()) {
         self.gen(lhs);
         self.gen(rhs);
         emit!("pop rdi");
         emit!("pop rax");
-        match op {
-            BinaryOperator::Add => emit!("add rax, rdi"),
-            BinaryOperator::Sub => emit!("sub rax, rdi"),
-            BinaryOperator::Mul => emit!("imul rax, rdi"),
-            BinaryOperator::Div => {
-                emit!("cqo");
-                emit!("idiv rdi");
-            }
-            BinaryOperator::Equal => {
-                emit!("cmp rax, rdi");
-                emit!("sete al");
-                emit!("movzb rax, al");
-            }
-            BinaryOperator::NotEqual => {
-                emit!("cmp rax, rdi");
-                emit!("setne al");
-                emit!("movzb rax, al");
-            }
-            BinaryOperator::LessThan => {
-                emit!("cmp rax, rdi");
-                emit!("setl al");
-                emit!("movzb rax, al");
-            }
-            BinaryOperator::LessThanEqual => {
-                emit!("cmp rax, rdi");
-                emit!("setle al");
-                emit!("movzb rax, al");
-            }
-            _ => panic!("\"{:?}\" must not be here.", op),
-        }
+        f();
         emit!("push rax");
     }
 
@@ -95,6 +53,46 @@ impl CodegenContext {
             NodeKind::Null => {}
             NodeKind::Number(n) => {
                 emit!("push {}", n);
+            }
+            NodeKind::Add { lhs, rhs } => self.gen_binary_ops(lhs, rhs, || emit!("add rax, rdi")),
+            NodeKind::Sub { lhs, rhs } => {
+                self.gen_binary_ops(lhs, rhs, || emit!("sub rax, rdi"));
+            }
+            NodeKind::Mul { lhs, rhs } => {
+                self.gen_binary_ops(lhs, rhs, || emit!("imul rax, rdi"));
+            }
+            NodeKind::Div { lhs, rhs } => self.gen_binary_ops(lhs, rhs, || {
+                emit!("cqo");
+                emit!("idiv rdi");
+            }),
+            NodeKind::Equal { lhs, rhs } => self.gen_binary_ops(lhs, rhs, || {
+                emit!("cmp rax, rdi");
+                emit!("sete al");
+                emit!("movzb rax, al");
+            }),
+            NodeKind::NotEqual { lhs, rhs } => self.gen_binary_ops(lhs, rhs, || {
+                emit!("cmp rax, rdi");
+                emit!("setne al");
+                emit!("movzb rax, al");
+            }),
+            NodeKind::LessThan { lhs, rhs } => self.gen_binary_ops(lhs, rhs, || {
+                emit!("cmp rax, rdi");
+                emit!("setl al");
+                emit!("movzb rax, al");
+            }),
+            NodeKind::LessThanEqual { lhs, rhs } => self.gen_binary_ops(lhs, rhs, || {
+                emit!("cmp rax, rdi");
+                emit!("setle al");
+                emit!("movzb rax, al");
+            }),
+            NodeKind::Assign { lhs, rhs } => {
+                self.gen_addr(lhs);
+                self.gen(rhs);
+                emit!("pop rdi");
+                emit!("pop rax");
+                emit!("mov [rax], rdi");
+                emit!("push rdi");
+                return;
             }
             NodeKind::LocalVar(_) => {
                 self.gen_addr(node);
@@ -108,9 +106,6 @@ impl CodegenContext {
                 emit!("mov rsp, rbp");
                 emit!("pop rbp");
                 emit!("ret");
-            }
-            NodeKind::Binary { op, lhs, rhs } => {
-                self.gen_binary_operator(&op, &lhs, &rhs);
             }
             NodeKind::If { cond, then, els } => {
                 let label_id = self.generate_label_id();
