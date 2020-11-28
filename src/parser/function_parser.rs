@@ -1,5 +1,5 @@
 use super::token_cursor::TokenCursor;
-use super::types::{Function, Node, NodeKind, Variable};
+use super::types::{Function, Node, NodeKind, Type, Variable};
 use crate::tokenizer::{Keyword, TokenKind};
 use std::rc::Rc;
 
@@ -8,8 +8,40 @@ pub struct FunctionParser<'local, 'outer: 'local> {
     cursor: &'local mut TokenCursor<'outer>,
 }
 
+fn detect_type(kind: &NodeKind) -> Option<Type> {
+    match kind {
+        NodeKind::Mul { lhs: _, rhs: _ }
+        | NodeKind::Div { lhs: _, rhs: _ }
+        | NodeKind::Equal { lhs: _, rhs: _ }
+        | NodeKind::NotEqual { lhs: _, rhs: _ }
+        | NodeKind::LessThan { lhs: _, rhs: _ }
+        | NodeKind::LessThanEqual { lhs: _, rhs: _ }
+        | NodeKind::LocalVar(_)
+        | NodeKind::FunCall { name: _, args: _ }
+        | NodeKind::Number(_) => Some(Type::Int),
+        NodeKind::Add { lhs, rhs } => match rhs.ty {
+            Some(Type::Pointer(_)) => panic!("ポインタを加算の右辺値に指定できません"),
+            _ => lhs.ty.clone(),
+        },
+        NodeKind::Sub { lhs, rhs } => match rhs.ty {
+            Some(Type::Pointer(_)) => panic!("ポインタを減算の右辺値に指定できません"),
+            _ => lhs.ty.clone(),
+        },
+        NodeKind::Assign { lhs, rhs: _ } => lhs.ty.clone(),
+        NodeKind::Addr(target) => {
+            Some(Type::Pointer(Box::new(target.ty.as_ref().unwrap().clone())))
+        }
+        NodeKind::Deref(target) => match &target.ty {
+            Some(Type::Pointer(t)) => Some(*t.clone()),
+            _ => Some(Type::Int),
+        },
+        _ => None,
+    }
+}
+
 fn make_node<'a>(kind: NodeKind<'a>) -> Node<'a> {
-    return Node { kind };
+    let ty = detect_type(&kind);
+    return Node { kind, ty };
 }
 
 impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {

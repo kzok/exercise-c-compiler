@@ -6,6 +6,12 @@ pub struct Variable<'a> {
     pub offset: u32,
 }
 
+#[derive(Debug, PartialEq, Clone)]
+pub enum Type {
+    Int,
+    Pointer(Box<Type>),
+}
+
 #[derive(Debug, PartialEq)]
 pub enum NodeKind<'a> {
     // 何もしないノード
@@ -95,6 +101,7 @@ pub enum NodeKind<'a> {
 #[derive(Debug, PartialEq)]
 pub struct Node<'a> {
     pub kind: NodeKind<'a>,
+    pub ty: Option<Type>,
 }
 
 #[derive(Debug, PartialEq)]
