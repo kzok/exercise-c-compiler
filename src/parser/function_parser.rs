@@ -16,7 +16,6 @@ fn detect_type(kind: &NodeKind) -> Option<Type> {
         | NodeKind::NotEqual { lhs: _, rhs: _ }
         | NodeKind::LessThan { lhs: _, rhs: _ }
         | NodeKind::LessThanEqual { lhs: _, rhs: _ }
-        | NodeKind::LocalVar(_)
         | NodeKind::FunCall { name: _, args: _ }
         | NodeKind::Number(_) => Some(Type::Int),
         NodeKind::Add { lhs, rhs } => match rhs.ty {
@@ -27,6 +26,7 @@ fn detect_type(kind: &NodeKind) -> Option<Type> {
             Some(Type::Pointer(_)) => panic!("ポインタを減算の右辺値に指定できません"),
             _ => lhs.ty.clone(),
         },
+        NodeKind::LocalVar(var) => Some((*var).ty.clone()),
         NodeKind::Assign { lhs, rhs: _ } => lhs.ty.clone(),
         NodeKind::Addr(target) => {
             Some(Type::Pointer(Box::new(target.ty.as_ref().unwrap().clone())))
@@ -52,7 +52,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         };
     }
 
-    fn new_localvar(&mut self, name: &'outer str) -> Rc<Variable<'outer>> {
+    fn new_localvar(&mut self, name: &'outer str, ty: Type) -> Rc<Variable<'outer>> {
         let previous_offset = self
             .locals
             .iter()
@@ -60,6 +60,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         let local = Rc::new(Variable {
             name: name,
             offset: previous_offset + 8,
+            ty,
         });
         self.locals.push(local.clone());
         return local;
@@ -74,8 +75,16 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         return None;
     }
 
-    fn base_type(&mut self) {
+    fn base_type(&mut self) -> Type {
         self.cursor.expect_keyword(Keyword::Int);
+        let mut ty = Type::Int;
+        loop {
+            if !self.cursor.consume_sign("*") {
+                break;
+            }
+            ty = Type::Pointer(Box::new(ty));
+        }
+        return ty;
     }
 
     fn read_func_params(&mut self) -> Vec<Rc<Variable<'outer>>> {
@@ -83,17 +92,17 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         if self.cursor.consume_sign(")") {
             return params;
         }
-        self.base_type();
+        let ty = self.base_type();
         let name = self.cursor.expect_ident();
-        let local = self.new_localvar(name);
+        let local = self.new_localvar(name, ty);
         self.locals.push(local.clone());
         params.push(local);
 
         while !self.cursor.consume_sign(")") {
             self.cursor.expect_sign(",");
-            self.base_type();
+            let ty = self.base_type();
             let name = self.cursor.expect_ident();
-            let local = self.new_localvar(name);
+            let local = self.new_localvar(name, ty);
             self.locals.push(local.clone());
             params.push(local);
         }
@@ -115,9 +124,9 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     }
 
     fn declaretion(&mut self) -> Node<'outer> {
-        self.base_type();
+        let ty = self.base_type();
         let name = self.cursor.expect_ident();
-        let var = self.new_localvar(name);
+        let var = self.new_localvar(name, ty);
         if self.cursor.consume_sign(";") {
             return make_node(NodeKind::Null);
         }

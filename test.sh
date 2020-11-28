@@ -6,6 +6,9 @@ cargo test
 cargo build
 
 cat <<EOF | gcc -xc -c -o tmp2.o -
+#include <stdio.h>
+#include <stdlib.h>
+
 int ret3() { return 3; }
 int ret5() { return 5; }
 int add(int x, int y) { return x+y; }
@@ -103,7 +106,7 @@ assert 3 "int main() { int x=3; int y=&x; int z=&y; return **z; }"
 assert 5 "int main() { int x=3; int y=5; return *(&x-1); }"
 assert 3 "int main() { int x=3; int y=5; return *(&y+1); }"
 assert 5 "int main() { int x=3; int y=&x; *y=5; return x; }"
-assert 7 "int main() { int x=3; int y=5; *(&x-1)=7; return y; }"
-assert 7 "int main() { int x=3; int y=5; *(&y+1)=7; return x; }"
+assert 1 "int main() { int a; a=1; int *p; p=&a; return *p; }"
+assert 8 'int main() { int x=3; int y=5; return foo(&x,y); } int foo(int *x, int y) { return *x+y; }'
 
 echo -e "\e[32mAll tests passed!\e[0m"

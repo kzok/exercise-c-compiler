@@ -1,15 +1,16 @@
 use std::rc::Rc;
 
-#[derive(Debug, PartialEq)]
-pub struct Variable<'a> {
-    pub name: &'a str,
-    pub offset: u32,
-}
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum Type {
     Int,
     Pointer(Box<Type>),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Variable<'a> {
+    pub name: &'a str,
+    pub offset: u32,
+    pub ty: Type,
 }
 
 #[derive(Debug, PartialEq)]
