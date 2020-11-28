@@ -1,4 +1,4 @@
-use crate::parser::{Node, NodeKind, Program};
+use crate::parser::{Node, NodeKind, Program, Type};
 
 macro_rules! p {
   ($($arg:tt)*) => ({println!($($arg)*);})
@@ -39,7 +39,7 @@ impl CodegenContext {
         }
     }
 
-    pub fn gen_binary_ops(&mut self, lhs: &Box<Node>, rhs: &Box<Node>, f: fn()) {
+    pub fn gen_binary_ops(&mut self, lhs: &Box<Node>, rhs: &Box<Node>, f: impl Fn()) {
         self.gen(lhs);
         self.gen(rhs);
         emit!("pop rdi");
@@ -54,9 +54,21 @@ impl CodegenContext {
             NodeKind::Number(n) => {
                 emit!("push {}", n);
             }
-            NodeKind::Add { lhs, rhs } => self.gen_binary_ops(lhs, rhs, || emit!("add rax, rdi")),
+            NodeKind::Add { lhs, rhs } => {
+                self.gen_binary_ops(lhs, rhs, || {
+                    if let Some(Type::Pointer(_)) = node.ty {
+                        emit!("imul rdi, 8");
+                    }
+                    emit!("add rax, rdi");
+                });
+            }
             NodeKind::Sub { lhs, rhs } => {
-                self.gen_binary_ops(lhs, rhs, || emit!("sub rax, rdi"));
+                self.gen_binary_ops(lhs, rhs, || {
+                    if let Some(Type::Pointer(_)) = node.ty {
+                        emit!("imul rdi, 8");
+                    }
+                    emit!("sub rax, rdi");
+                });
             }
             NodeKind::Mul { lhs, rhs } => {
                 self.gen_binary_ops(lhs, rhs, || emit!("imul rax, rdi"));
