@@ -109,4 +109,9 @@ assert 5 "int main() { int x=3; int y=&x; *y=5; return x; }"
 assert 1 "int main() { int a; a=1; int *p; p=&a; return *p; }"
 assert 8 'int main() { int x=3; int y=5; return foo(&x,y); } int foo(int *x, int y) { return *x+y; }'
 
+assert 8 'int main() { int x; return sizeof(x); }'
+assert 8 'int main() { int x; return sizeof x; }'
+assert 8 'int main() { int* x; return sizeof x; }'
+assert 8 'int main() { int** x; return sizeof x; }'
+
 echo -e "\e[32mAll tests passed!\e[0m"
