@@ -3,18 +3,6 @@ use super::types::{Function, Node, NodeKind, Type, Variable};
 use crate::tokenizer::{Keyword, TokenKind};
 use std::rc::Rc;
 
-pub struct FunctionParser<'local, 'outer: 'local> {
-    locals: Vec<Rc<Variable<'outer>>>,
-    cursor: &'local mut TokenCursor<'outer>,
-}
-
-fn size_of(node: &Node) -> u32 {
-    match node.ty {
-        Some(Type::Int) | Some(Type::Pointer(_)) => 8,
-        _ => panic!("sizeof 演算子の対象の型が不明です"),
-    }
-}
-
 fn detect_type(kind: &NodeKind) -> Option<Type> {
     match kind {
         NodeKind::Mul { lhs: _, rhs: _ }
@@ -51,35 +39,53 @@ fn make_node<'a>(kind: NodeKind<'a>) -> Node<'a> {
     return Node { kind, ty };
 }
 
-impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
-    pub fn new(cursor: &'local mut TokenCursor<'outer>) -> FunctionParser<'local, 'outer> {
-        return FunctionParser {
-            locals: Vec::new(),
-            cursor,
-        };
+struct FunctionVariables<'a> {
+    vars: Vec<Rc<Variable<'a>>>,
+}
+impl<'a> FunctionVariables<'a> {
+    pub fn new() -> FunctionVariables<'a> {
+        return FunctionVariables { vars: Vec::new() };
     }
 
-    fn new_localvar(&mut self, name: &'outer str, ty: Type) -> Rc<Variable<'outer>> {
-        let previous_offset = self
-            .locals
-            .iter()
-            .fold(0, |p, local| std::cmp::max(p, local.offset));
-        let local = Rc::new(Variable {
-            name: name,
-            offset: previous_offset + 8,
+    pub fn stack_size(&self) -> u32 {
+        return self.vars.iter().fold(0, |p, var| p + var.ty.size());
+    }
+
+    pub fn new_var(&mut self, name: &'a str, ty: Type) -> Rc<Variable<'a>> {
+        let stack_size = self.stack_size();
+        let var = Rc::new(Variable {
+            name,
+            offset: stack_size + ty.size(),
             ty,
         });
-        self.locals.push(local.clone());
-        return local;
+        self.vars.push(var.clone());
+        return var;
     }
 
-    fn find_lvar(&self, name: &str) -> Option<Rc<Variable<'outer>>> {
-        for local in &self.locals {
-            if local.name == name {
-                return Some(local.clone());
+    pub fn find(&self, name: &str) -> Option<Rc<Variable<'a>>> {
+        for var in &self.vars {
+            if var.name == name {
+                return Some(var.clone());
             }
         }
         return None;
+    }
+
+    pub fn dump_to_vec(self) -> Vec<Rc<Variable<'a>>> {
+        return self.vars;
+    }
+}
+
+pub struct FunctionParser<'local, 'outer: 'local> {
+    variables: FunctionVariables<'outer>,
+    cursor: &'local mut TokenCursor<'outer>,
+}
+impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
+    pub fn new(cursor: &'local mut TokenCursor<'outer>) -> FunctionParser<'local, 'outer> {
+        return FunctionParser {
+            variables: FunctionVariables::new(),
+            cursor,
+        };
     }
 
     fn base_type(&mut self) -> Type {
@@ -101,17 +107,15 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         }
         let ty = self.base_type();
         let name = self.cursor.expect_ident();
-        let local = self.new_localvar(name, ty);
-        self.locals.push(local.clone());
-        params.push(local);
+        let var = self.variables.new_var(name, ty);
+        params.push(var);
 
         while !self.cursor.consume_sign(")") {
             self.cursor.expect_sign(",");
             let ty = self.base_type();
             let name = self.cursor.expect_ident();
-            let local = self.new_localvar(name, ty);
-            self.locals.push(local.clone());
-            params.push(local);
+            let var = self.variables.new_var(name, ty);
+            params.push(var);
         }
 
         return params;
@@ -133,7 +137,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     fn declaretion(&mut self) -> Node<'outer> {
         let ty = self.base_type();
         let name = self.cursor.expect_ident();
-        let var = self.new_localvar(name, ty);
+        let var = self.variables.new_var(name, ty);
         if self.cursor.consume_sign(";") {
             return make_node(NodeKind::Null);
         }
@@ -147,7 +151,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     fn primary(&mut self) -> Node<'outer> {
         if self.cursor.consume_keyword(Keyword::SizeOf) {
             let target = Box::new(self.unary());
-            let size = size_of(&*target);
+            let size = target.ty.unwrap().size();
             return make_node(NodeKind::Number(size));
         }
         if self.cursor.consume_sign("(") {
@@ -163,7 +167,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             }
 
             // known variable
-            if let Some(local) = self.find_lvar(name) {
+            if let Some(local) = self.variables.find(name) {
                 return make_node(NodeKind::LocalVar(local));
             }
 
@@ -394,14 +398,11 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
                 nodes.push(ctx.stmt());
             }
 
-            let stack_size = ctx
-                .locals
-                .iter()
-                .fold(0, |p, local| std::cmp::max(p, local.offset));
+            let stack_size = ctx.variables.stack_size();
             return Some(Function {
                 name,
                 params,
-                locals: ctx.locals,
+                locals: ctx.variables.dump_to_vec(),
                 nodes,
                 stack_size,
             });

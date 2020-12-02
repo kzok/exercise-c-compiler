@@ -5,6 +5,13 @@ pub enum Type {
     Int,
     Pointer(Box<Type>),
 }
+impl Type {
+    pub fn size(&self) -> u32 {
+        match self {
+            Type::Int | Type::Pointer(_) => 8,
+        }
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct Variable<'a> {
