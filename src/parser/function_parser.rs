@@ -15,20 +15,24 @@ fn detect_type(kind: &NodeKind) -> Option<Type> {
         | NodeKind::Number(_) => Some(Type::Int),
         NodeKind::Add { lhs, rhs } => match rhs.ty {
             Some(Type::Pointer(_)) => panic!("ポインタを加算の右辺値に指定できません"),
+            Some(Type::Array(_, _)) => panic!("配列を加算の右辺値に指定できません"),
             _ => lhs.ty.clone(),
         },
         NodeKind::Sub { lhs, rhs } => match rhs.ty {
             Some(Type::Pointer(_)) => panic!("ポインタを減算の右辺値に指定できません"),
+            Some(Type::Array(_, _)) => panic!("配列を減算の右辺値に指定できません"),
             _ => lhs.ty.clone(),
         },
         NodeKind::LocalVar(var) => Some((*var).ty.clone()),
         NodeKind::Assign { lhs, rhs: _ } => lhs.ty.clone(),
-        NodeKind::Addr(target) => {
-            Some(Type::Pointer(Box::new(target.ty.as_ref().unwrap().clone())))
-        }
+        NodeKind::Addr(target) => match &target.ty {
+            Some(Type::Array(base, _)) => Some(Type::Pointer(Box::new(*base.clone()))),
+            Some(ty) => Some(Type::Pointer(Box::new(ty.clone()))),
+            _ => panic!("アドレス参照先の型が不明です"),
+        },
         NodeKind::Deref(target) => match &target.ty {
-            Some(Type::Pointer(t)) => Some(*t.clone()),
-            _ => Some(Type::Int),
+            Some(Type::Pointer(base)) | Some(Type::Array(base, _)) => Some(*base.clone()),
+            _ => panic!("デリファレンスできない型です"),
         },
         _ => None,
     }
@@ -88,6 +92,16 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         };
     }
 
+    fn read_type_suffix(&mut self, ty: Type) -> Type {
+        if !self.cursor.consume_sign("[") {
+            return ty;
+        }
+        let size = self.cursor.expect_number();
+        self.cursor.expect_sign("]");
+        let ty = self.read_type_suffix(ty);
+        return Type::Array(Box::new(ty), size);
+    }
+
     fn base_type(&mut self) -> Type {
         self.cursor.expect_keyword(Keyword::Int);
         let mut ty = Type::Int;
@@ -107,6 +121,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         }
         let ty = self.base_type();
         let name = self.cursor.expect_ident();
+        let ty = self.read_type_suffix(ty);
         let var = self.variables.new_var(name, ty);
         params.push(var);
 
@@ -114,6 +129,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             self.cursor.expect_sign(",");
             let ty = self.base_type();
             let name = self.cursor.expect_ident();
+            let ty = self.read_type_suffix(ty);
             let var = self.variables.new_var(name, ty);
             params.push(var);
         }
@@ -137,6 +153,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     fn declaretion(&mut self) -> Node<'outer> {
         let ty = self.base_type();
         let name = self.cursor.expect_ident();
+        let ty = self.read_type_suffix(ty);
         let var = self.variables.new_var(name, ty);
         if self.cursor.consume_sign(";") {
             return make_node(NodeKind::Null);

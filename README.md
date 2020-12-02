@@ -25,7 +25,7 @@
 program     = function*
 function    = basetype ident "(" params? ")" "{" stmt* "}"
 params      = param ("," param)*
-param       = basetype ident
+param       = basetype ident ("[" num "]")*
 stmt        = "return" expr ";"
             | "{" stmt* "}"
             | "if" "(" expr ")" stmt ("else" stmt)?
@@ -33,7 +33,7 @@ stmt        = "return" expr ";"
             | "for" "(" expr? ";" expr? ";" expr? ")" stmt
             | declaretion
             | expr ";"
-declaretion = basetype ident ("=" expr)? ";"
+declaretion = basetype ident ("[" num "]")* ("=" expr)? ";"
 expr        = assign
 assign      = equality ("=" assign)?
 equality    = relational ("==" relational | "!=" relational)*

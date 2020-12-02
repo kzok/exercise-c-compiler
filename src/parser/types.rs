@@ -4,11 +4,13 @@ use std::rc::Rc;
 pub enum Type {
     Int,
     Pointer(Box<Type>),
+    Array(Box<Type>, u32),
 }
 impl Type {
     pub fn size(&self) -> u32 {
         match self {
             Type::Int | Type::Pointer(_) => 8,
+            Type::Array(el, array_size) => el.size() * array_size,
         }
     }
 }

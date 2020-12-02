@@ -5,6 +5,7 @@ pub use types::{Keyword, Token, TokenKind};
 
 const SIGNES: &'static [&str] = &[
     "==", "!=", "<=", ">=", "<", ">", "(", ")", "+", "-", "*", "/", "&", "=", ";", "{", "}", ",",
+    "[", "]",
 ];
 
 fn is_alpha(c: &char) -> bool {
