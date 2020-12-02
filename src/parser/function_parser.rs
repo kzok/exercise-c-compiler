@@ -8,6 +8,13 @@ pub struct FunctionParser<'local, 'outer: 'local> {
     cursor: &'local mut TokenCursor<'outer>,
 }
 
+fn size_of(node: &Node) -> u32 {
+    match node.ty {
+        Some(Type::Int) | Some(Type::Pointer(_)) => 8,
+        _ => panic!("sizeof 演算子の対象の型が不明です"),
+    }
+}
+
 fn detect_type(kind: &NodeKind) -> Option<Type> {
     match kind {
         NodeKind::Mul { lhs: _, rhs: _ }
@@ -138,6 +145,11 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     }
 
     fn primary(&mut self) -> Node<'outer> {
+        if self.cursor.consume_keyword(Keyword::SizeOf) {
+            let target = Box::new(self.unary());
+            let size = size_of(&*target);
+            return make_node(NodeKind::Number(size));
+        }
         if self.cursor.consume_sign("(") {
             let node = self.expr();
             self.cursor.expect_sign(")");

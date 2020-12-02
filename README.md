@@ -43,7 +43,10 @@ mul         = unary ("*" unary | "/" unary)*
 unary       = ("+" | "-")? primary
             | "*" unary
             | "&" unary
-primary     = num | funcall | "(" expr ")"
+primary     = num
+            | "sizeof" unary
+            | funcall
+            | "(" expr ")"
 funcall     = ident ("(" (assign ("," assign)*)? ")")?
-basetype    = "int"
+basetype    = "int" "*"*
 ```
