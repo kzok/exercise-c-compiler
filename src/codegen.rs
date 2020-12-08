@@ -35,8 +35,15 @@ impl CodegenContext {
             NodeKind::Deref(node) => {
                 self.gen(&node);
             }
-            _ => panic!("代入の左辺値が変数ではありません"),
+            _ => panic!("変数ではありません"),
         }
+    }
+
+    fn gen_lvar(&mut self, node: &Node) {
+        if let Some(Type::Array(_, _)) = node.ty {
+            panic!("左辺値ではありません");
+        }
+        self.gen_addr(node);
     }
 
     pub fn gen_binary_ops(&mut self, lhs: &Box<Node>, rhs: &Box<Node>, f: impl Fn()) {
@@ -56,16 +63,22 @@ impl CodegenContext {
             }
             NodeKind::Add { lhs, rhs } => {
                 self.gen_binary_ops(lhs, rhs, || {
-                    if let Some(Type::Pointer(_)) = node.ty {
-                        emit!("imul rdi, 8");
+                    match &node.ty {
+                        Some(Type::Pointer(base)) | Some(Type::Array(base, _)) => {
+                            emit!("imul rdi, {}", base.size());
+                        }
+                        _ => {}
                     }
                     emit!("add rax, rdi");
                 });
             }
             NodeKind::Sub { lhs, rhs } => {
                 self.gen_binary_ops(lhs, rhs, || {
-                    if let Some(Type::Pointer(_)) = node.ty {
-                        emit!("imul rdi, 8");
+                    match &node.ty {
+                        Some(Type::Pointer(base)) | Some(Type::Array(base, _)) => {
+                            emit!("imul rdi, {}", base.size());
+                        }
+                        _ => {}
                     }
                     emit!("sub rax, rdi");
                 });
@@ -98,7 +111,7 @@ impl CodegenContext {
                 emit!("movzb rax, al");
             }),
             NodeKind::Assign { lhs, rhs } => {
-                self.gen_addr(lhs);
+                self.gen_lvar(lhs);
                 self.gen(rhs);
                 emit!("pop rdi");
                 emit!("pop rax");
@@ -108,12 +121,17 @@ impl CodegenContext {
             }
             NodeKind::LocalVar(_) => {
                 self.gen_addr(node);
-                emit!("pop rax");
-                emit!("mov rax, [rax]");
-                emit!("push rax");
+                match &node.ty {
+                    Some(Type::Array(_, _)) => {}
+                    _ => {
+                        emit!("pop rax");
+                        emit!("mov rax, [rax]");
+                        emit!("push rax");
+                    }
+                }
             }
-            NodeKind::Return(node) => {
-                self.gen(&node);
+            NodeKind::Return(target) => {
+                self.gen(&target);
                 emit!("pop rax");
                 emit!("mov rsp, rbp");
                 emit!("pop rbp");
@@ -203,14 +221,19 @@ impl CodegenContext {
                 p!(".L.end.{}:", label_id);
                 emit!("push rax");
             }
-            NodeKind::Addr(node) => {
-                self.gen_addr(&node);
+            NodeKind::Addr(target) => {
+                self.gen_addr(&target);
             }
-            NodeKind::Deref(node) => {
-                self.gen(&node);
-                emit!("pop rax");
-                emit!("mov rax, [rax]");
-                emit!("push rax");
+            NodeKind::Deref(target) => {
+                self.gen(&target);
+                match &node.ty {
+                    Some(Type::Array(_, _)) => {}
+                    _ => {
+                        emit!("pop rax");
+                        emit!("mov rax, [rax]");
+                        emit!("push rax");
+                    }
+                }
             }
         }
     }
