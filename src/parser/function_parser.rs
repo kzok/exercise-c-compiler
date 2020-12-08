@@ -38,7 +38,15 @@ fn detect_type(kind: &NodeKind) -> Option<Type> {
     }
 }
 
-fn make_node<'a>(kind: NodeKind<'a>) -> Node<'a> {
+fn make_node<'a>(mut kind: NodeKind<'a>) -> Node<'a> {
+    match &mut kind {
+        // NOTE: 加算の右辺値がポインタ型や配列型の場合は左辺値と入れ替える
+        NodeKind::Add { lhs, rhs } => match rhs.ty {
+            Some(Type::Pointer(_)) | Some(Type::Array(_, _)) => std::mem::swap(lhs, rhs),
+            _ => {}
+        },
+        _ => {}
+    }
     let ty = detect_type(&kind);
     return Node { kind, ty };
 }
