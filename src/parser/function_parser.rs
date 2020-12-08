@@ -195,6 +195,20 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         return make_node(NodeKind::Number(self.cursor.expect_number()));
     }
 
+    fn postfix(&mut self) -> Node<'outer> {
+        let mut node = self.primary();
+
+        while self.cursor.consume_sign("[") {
+            let exp = make_node(NodeKind::Add {
+                lhs: Box::new(node),
+                rhs: Box::new(self.expr()),
+            });
+            self.cursor.expect_sign("]");
+            node = make_node(NodeKind::Deref(Box::new(exp)));
+        }
+        return node;
+    }
+
     fn unary(&mut self) -> Node<'outer> {
         if self.cursor.consume_sign("+") {
             return self.primary();
@@ -211,7 +225,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         if self.cursor.consume_sign("*") {
             return make_node(NodeKind::Deref(Box::new(self.unary())));
         }
-        return self.primary();
+        return self.postfix();
     }
 
     fn mul(&mut self) -> Node<'outer> {
