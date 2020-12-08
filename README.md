@@ -6,18 +6,17 @@
 
 ※ ステップ 15 まで実装してから C 言語から Rust に書き換えました
 
-- [std - Rust](https://doc.rust-lang.org/std/index.html)
-
 ## 参考資料
 
 - [chibicc](https://github.com/rui314/chibicc/)
   - [branch: reference](https://github.com/rui314/chibicc/commits/reference)
   - [branch: historical/old](https://github.com/rui314/chibicc/commits/historical/old)
+- [std - Rust](https://doc.rust-lang.org/std/index.html)
 
 ## コマンド
 
-※ Linux/x86-64 でのみ動きます
-※ vscode を使う場合は拡張機能 "Remote - Containers" で開発環境を整えられます
+- ※ Linux/x86-64 でのみ動きます
+- ※ vscode を使う場合は拡張機能 "Remote - Containers" で開発環境を整えられます
 
 ## 文法
 
