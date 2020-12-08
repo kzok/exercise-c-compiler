@@ -38,7 +38,15 @@ fn detect_type(kind: &NodeKind) -> Option<Type> {
     }
 }
 
-fn make_node<'a>(kind: NodeKind<'a>) -> Node<'a> {
+fn make_node<'a>(mut kind: NodeKind<'a>) -> Node<'a> {
+    match &mut kind {
+        // NOTE: 加算の右辺値がポインタ型や配列型の場合は左辺値と入れ替える
+        NodeKind::Add { lhs, rhs } => match rhs.ty {
+            Some(Type::Pointer(_)) | Some(Type::Array(_, _)) => std::mem::swap(lhs, rhs),
+            _ => {}
+        },
+        _ => {}
+    }
     let ty = detect_type(&kind);
     return Node { kind, ty };
 }
@@ -195,6 +203,20 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         return make_node(NodeKind::Number(self.cursor.expect_number()));
     }
 
+    fn postfix(&mut self) -> Node<'outer> {
+        let mut node = self.primary();
+
+        while self.cursor.consume_sign("[") {
+            let exp = make_node(NodeKind::Add {
+                lhs: Box::new(node),
+                rhs: Box::new(self.expr()),
+            });
+            self.cursor.expect_sign("]");
+            node = make_node(NodeKind::Deref(Box::new(exp)));
+        }
+        return node;
+    }
+
     fn unary(&mut self) -> Node<'outer> {
         if self.cursor.consume_sign("+") {
             return self.primary();
@@ -211,7 +233,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         if self.cursor.consume_sign("*") {
             return make_node(NodeKind::Deref(Box::new(self.unary())));
         }
-        return self.primary();
+        return self.postfix();
     }
 
     fn mul(&mut self) -> Node<'outer> {
