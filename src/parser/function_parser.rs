@@ -69,6 +69,7 @@ impl<'a> FunctionVariables<'a> {
             name,
             offset: stack_size + ty.size(),
             ty,
+            is_local: true,
         });
         self.vars.push(var.clone());
         return var;

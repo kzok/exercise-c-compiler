@@ -20,6 +20,7 @@ pub struct Variable<'a> {
     pub name: &'a str,
     pub offset: u32,
     pub ty: Type,
+    pub is_local: bool,
 }
 
 #[derive(Debug, PartialEq)]
