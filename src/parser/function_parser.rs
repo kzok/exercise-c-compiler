@@ -5,28 +5,28 @@ use std::rc::Rc;
 
 fn detect_type(kind: &NodeKind) -> Option<Type> {
     match kind {
-        NodeKind::Mul { lhs: _, rhs: _ }
-        | NodeKind::Div { lhs: _, rhs: _ }
-        | NodeKind::Equal { lhs: _, rhs: _ }
-        | NodeKind::NotEqual { lhs: _, rhs: _ }
-        | NodeKind::LessThan { lhs: _, rhs: _ }
-        | NodeKind::LessThanEqual { lhs: _, rhs: _ }
-        | NodeKind::FunCall { name: _, args: _ }
+        NodeKind::Mul { .. }
+        | NodeKind::Div { .. }
+        | NodeKind::Equal { .. }
+        | NodeKind::NotEqual { .. }
+        | NodeKind::LessThan { .. }
+        | NodeKind::LessThanEqual { .. }
+        | NodeKind::FunCall { .. }
         | NodeKind::Number(_) => Some(Type::Int),
         NodeKind::Add { lhs, rhs } => match rhs.ty {
             Some(Type::Pointer(_)) => panic!("ポインタを加算の右辺値に指定できません"),
-            Some(Type::Array(_, _)) => panic!("配列を加算の右辺値に指定できません"),
+            Some(Type::Array(..)) => panic!("配列を加算の右辺値に指定できません"),
             _ => lhs.ty.clone(),
         },
         NodeKind::Sub { lhs, rhs } => match rhs.ty {
             Some(Type::Pointer(_)) => panic!("ポインタを減算の右辺値に指定できません"),
-            Some(Type::Array(_, _)) => panic!("配列を減算の右辺値に指定できません"),
+            Some(Type::Array(..)) => panic!("配列を減算の右辺値に指定できません"),
             _ => lhs.ty.clone(),
         },
         NodeKind::LocalVar(var) => Some((*var).ty.clone()),
-        NodeKind::Assign { lhs, rhs: _ } => lhs.ty.clone(),
+        NodeKind::Assign { lhs, .. } => lhs.ty.clone(),
         NodeKind::Addr(target) => match &target.ty {
-            Some(Type::Array(base, _)) => Some(Type::Pointer(Box::new(*base.clone()))),
+            Some(Type::Array(base, ..)) => Some(Type::Pointer(Box::new(*base.clone()))),
             Some(ty) => Some(Type::Pointer(Box::new(ty.clone()))),
             _ => panic!("アドレス参照先の型が不明です"),
         },
@@ -42,7 +42,7 @@ fn make_node<'a>(mut kind: NodeKind<'a>) -> Node<'a> {
     match &mut kind {
         // NOTE: 加算の右辺値がポインタ型や配列型の場合は左辺値と入れ替える
         NodeKind::Add { lhs, rhs } => match rhs.ty {
-            Some(Type::Pointer(_)) | Some(Type::Array(_, _)) => std::mem::swap(lhs, rhs),
+            Some(Type::Pointer(_)) | Some(Type::Array(..)) => std::mem::swap(lhs, rhs),
             _ => {}
         },
         _ => {}

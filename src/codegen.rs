@@ -40,7 +40,7 @@ impl CodegenContext {
     }
 
     fn gen_lvar(&mut self, node: &Node) {
-        if let Some(Type::Array(_, _)) = node.ty {
+        if let Some(Type::Array(..)) = node.ty {
             panic!("左辺値ではありません");
         }
         self.gen_addr(node);
@@ -122,7 +122,7 @@ impl CodegenContext {
             NodeKind::LocalVar(_) => {
                 self.gen_addr(node);
                 match &node.ty {
-                    Some(Type::Array(_, _)) => {}
+                    Some(Type::Array(..)) => {}
                     _ => {
                         emit!("pop rax");
                         emit!("mov rax, [rax]");
@@ -227,7 +227,7 @@ impl CodegenContext {
             NodeKind::Deref(target) => {
                 self.gen(&target);
                 match &node.ty {
-                    Some(Type::Array(_, _)) => {}
+                    Some(Type::Array(..)) => {}
                     _ => {
                         emit!("pop rax");
                         emit!("mov rax, [rax]");
