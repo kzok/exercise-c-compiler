@@ -10,6 +10,7 @@ use token_cursor::TokenCursor;
 pub use types::{Function, Node, NodeKind, Program, Type, Variable};
 
 pub fn parse<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
+    let globals: Vec<Variable> = Vec::new();
     let mut functions: Vec<Function> = Vec::new();
     let mut cursor = TokenCursor::new(&tokens);
 
@@ -21,5 +22,5 @@ pub fn parse<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
         cursor.report_error("識別子ではありません");
     }
 
-    return Program { functions };
+    return Program { functions, globals };
 }

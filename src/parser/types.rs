@@ -127,4 +127,5 @@ pub struct Function<'a> {
 #[derive(Debug, PartialEq)]
 pub struct Program<'a> {
     pub functions: Vec<Function<'a>>,
+    pub globals: Vec<Variable<'a>>,
 }
