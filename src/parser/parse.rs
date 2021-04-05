@@ -1,7 +1,9 @@
 use super::token_cursor::TokenCursor;
-use super::types::{Function, Node, NodeKind, Type, Variable};
+use super::types::*;
+use crate::tokenizer::Token;
 use crate::tokenizer::{Keyword, TokenKind};
 use std::rc::Rc;
+use std::vec::Vec;
 
 fn detect_type(kind: &NodeKind) -> Option<Type> {
     match kind {
@@ -89,12 +91,12 @@ impl<'a> FunctionVariables<'a> {
     }
 }
 
-pub struct FunctionParser<'local, 'outer: 'local> {
+struct FunctionParser<'local, 'outer: 'local> {
     variables: FunctionVariables<'outer>,
     cursor: &'local mut TokenCursor<'outer>,
 }
 impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
-    pub fn new(cursor: &'local mut TokenCursor<'outer>) -> FunctionParser<'local, 'outer> {
+    fn new(cursor: &'local mut TokenCursor<'outer>) -> FunctionParser<'local, 'outer> {
         return FunctionParser {
             variables: FunctionVariables::new(),
             cursor,
@@ -448,4 +450,20 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             });
         });
     }
+}
+
+pub fn parse<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
+    let globals: Vec<Variable> = Vec::new();
+    let mut functions: Vec<Function> = Vec::new();
+    let mut cursor = TokenCursor::new(&tokens);
+
+    while cursor.remains() {
+        if let Some(function) = FunctionParser::parse(&mut cursor) {
+            functions.push(function);
+            continue;
+        }
+        cursor.report_error("識別子ではありません");
+    }
+
+    return Program { functions, globals };
 }
