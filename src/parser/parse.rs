@@ -103,44 +103,22 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         };
     }
 
-    fn read_type_suffix(&mut self, ty: Type) -> Type {
-        if !self.cursor.consume_sign("[") {
-            return ty;
-        }
-        let size = self.cursor.expect_number();
-        self.cursor.expect_sign("]");
-        let ty = self.read_type_suffix(ty);
-        return Type::Array(Box::new(ty), size);
-    }
-
-    fn base_type(&mut self) -> Type {
-        self.cursor.expect_keyword(Keyword::Int);
-        let mut ty = Type::Int;
-        loop {
-            if !self.cursor.consume_sign("*") {
-                break;
-            }
-            ty = Type::Pointer(Box::new(ty));
-        }
-        return ty;
-    }
-
     fn read_func_params(&mut self) -> Vec<Rc<Variable<'outer>>> {
         let mut params = Vec::new();
         if self.cursor.consume_sign(")") {
             return params;
         }
-        let ty = self.base_type();
+        let ty = self.cursor.read_base_type();
         let name = self.cursor.expect_ident();
-        let ty = self.read_type_suffix(ty);
+        let ty = self.cursor.read_type_suffix(ty);
         let var = self.variables.new_var(name, ty);
         params.push(var);
 
         while !self.cursor.consume_sign(")") {
             self.cursor.expect_sign(",");
-            let ty = self.base_type();
+            let ty = self.cursor.read_base_type();
             let name = self.cursor.expect_ident();
-            let ty = self.read_type_suffix(ty);
+            let ty = self.cursor.read_type_suffix(ty);
             let var = self.variables.new_var(name, ty);
             params.push(var);
         }
@@ -162,9 +140,9 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     }
 
     fn declaretion(&mut self) -> Node<'outer> {
-        let ty = self.base_type();
+        let ty = self.cursor.read_base_type();
         let name = self.cursor.expect_ident();
-        let ty = self.read_type_suffix(ty);
+        let ty = self.cursor.read_type_suffix(ty);
         let var = self.variables.new_var(name, ty);
         if self.cursor.consume_sign(";") {
             return make_node(NodeKind::Null);
@@ -429,7 +407,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
     pub fn parse(cursor: &'local mut TokenCursor<'outer>) -> Option<Function<'outer>> {
         let mut ctx = FunctionParser::new(cursor);
-        ctx.base_type();
+        ctx.cursor.read_base_type();
         return ctx.cursor.consume_ident().and_then(|name| {
             let mut nodes = Vec::new();
 

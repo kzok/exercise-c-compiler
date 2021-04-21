@@ -1,3 +1,4 @@
+use super::types::*;
 use crate::tokenizer::{Keyword, Token, TokenKind};
 use std::cmp::max;
 use std::vec::Vec;
@@ -97,5 +98,27 @@ impl<'a> TokenCursor<'a> {
             }
             _ => self.report_error("数ではありません"),
         }
+    }
+
+    pub fn read_base_type(&mut self) -> Type {
+        self.expect_keyword(Keyword::Int);
+        let mut ty = Type::Int;
+        loop {
+            if !self.consume_sign("*") {
+                break;
+            }
+            ty = Type::Pointer(Box::new(ty));
+        }
+        return ty;
+    }
+
+    pub fn read_type_suffix(&mut self, ty: Type) -> Type {
+        if !self.consume_sign("[") {
+            return ty;
+        }
+        let size = self.expect_number();
+        self.expect_sign("]");
+        let ty = self.read_type_suffix(ty);
+        return Type::Array(Box::new(ty), size);
     }
 }
