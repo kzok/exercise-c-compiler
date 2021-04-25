@@ -27,10 +27,14 @@ impl CodegenContext {
 
     fn gen_addr(&mut self, node: &Node) {
         match &node.kind {
-            NodeKind::LocalVar(local) => {
-                emit!("mov rax, rbp");
-                emit!("sub rax, {}", local.offset);
-                emit!("push rax");
+            NodeKind::Variable(var) => {
+                if var.is_local {
+                    emit!("mov rax, rbp");
+                    emit!("sub rax, {}", var.offset);
+                    emit!("push rax");
+                } else {
+                    emit!("push offset {}\n", var.name);
+                }
             }
             NodeKind::Deref(node) => {
                 self.gen(&node);
@@ -119,7 +123,7 @@ impl CodegenContext {
                 emit!("push rdi");
                 return;
             }
-            NodeKind::LocalVar(_) => {
+            NodeKind::Variable(_) => {
                 self.gen_addr(node);
                 match &node.ty {
                     Some(Type::Array(..)) => {}
@@ -243,6 +247,14 @@ pub fn codegen(program: &Program) {
     let mut ctx = CodegenContext::new();
 
     p!(".intel_syntax noprefix");
+
+    p!(".data");
+    for global in &program.globals {
+        p!("{}:", global.name);
+        emit!(".zero {}", global.ty.size());
+    }
+
+    p!(".text");
     for function in &program.functions {
         p!(".global {}", function.name);
         p!("{}:", function.name);

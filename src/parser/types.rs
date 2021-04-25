@@ -18,9 +18,10 @@ impl Type {
 #[derive(Debug, PartialEq)]
 pub struct Variable<'a> {
     pub name: &'a str,
-    pub offset: u32,
     pub ty: Type,
     pub is_local: bool,
+    // only available on local variable
+    pub offset: u32,
 }
 
 #[derive(Debug, PartialEq)]
@@ -74,8 +75,8 @@ pub enum NodeKind<'a> {
         lhs: Box<Node<'a>>,
         rhs: Box<Node<'a>>,
     },
-    // local variable
-    LocalVar(Rc<Variable<'a>>),
+    // variable
+    Variable(Rc<Variable<'a>>),
     // "return"
     Return(Box<Node<'a>>),
     // "if"
