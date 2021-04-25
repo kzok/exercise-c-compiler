@@ -21,7 +21,8 @@
 ## 文法
 
 ```
-program     = function*
+program     = (global-var | function)*
+global-var  = basetype ident ("[" num "]")* ";"
 function    = basetype ident "(" params? ")" "{" stmt* "}"
 params      = param ("," param)*
 param       = basetype ident ("[" num "]")*

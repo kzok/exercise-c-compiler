@@ -27,10 +27,14 @@ impl CodegenContext {
 
     fn gen_addr(&mut self, node: &Node) {
         match &node.kind {
-            NodeKind::LocalVar(local) => {
-                emit!("mov rax, rbp");
-                emit!("sub rax, {}", local.offset);
-                emit!("push rax");
+            NodeKind::Variable(var) => {
+                if var.is_local {
+                    emit!("mov rax, rbp");
+                    emit!("sub rax, {}", var.offset);
+                    emit!("push rax");
+                } else {
+                    emit!("push offset {}\n", var.name);
+                }
             }
             NodeKind::Deref(node) => {
                 self.gen(&node);
@@ -40,7 +44,7 @@ impl CodegenContext {
     }
 
     fn gen_lvar(&mut self, node: &Node) {
-        if let Some(Type::Array(_, _)) = node.ty {
+        if let Some(Type::Array(..)) = node.ty {
             panic!("左辺値ではありません");
         }
         self.gen_addr(node);
@@ -119,10 +123,10 @@ impl CodegenContext {
                 emit!("push rdi");
                 return;
             }
-            NodeKind::LocalVar(_) => {
+            NodeKind::Variable(_) => {
                 self.gen_addr(node);
                 match &node.ty {
-                    Some(Type::Array(_, _)) => {}
+                    Some(Type::Array(..)) => {}
                     _ => {
                         emit!("pop rax");
                         emit!("mov rax, [rax]");
@@ -227,7 +231,7 @@ impl CodegenContext {
             NodeKind::Deref(target) => {
                 self.gen(&target);
                 match &node.ty {
-                    Some(Type::Array(_, _)) => {}
+                    Some(Type::Array(..)) => {}
                     _ => {
                         emit!("pop rax");
                         emit!("mov rax, [rax]");
@@ -243,6 +247,14 @@ pub fn codegen(program: &Program) {
     let mut ctx = CodegenContext::new();
 
     p!(".intel_syntax noprefix");
+
+    p!(".data");
+    for global in &program.globals {
+        p!("{}:", global.name);
+        emit!(".zero {}", global.ty.size());
+    }
+
+    p!(".text");
     for function in &program.functions {
         p!(".global {}", function.name);
         p!("{}:", function.name);
