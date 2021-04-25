@@ -431,7 +431,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 }
 
 pub fn parse<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
-    let globals: Vec<Variable> = Vec::new();
+    let globals: Vec<Rc<Variable>> = Vec::new();
     let mut functions: Vec<Function> = Vec::new();
     let mut cursor = TokenCursor::new(&tokens);
 
