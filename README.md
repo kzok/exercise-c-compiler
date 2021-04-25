@@ -4,19 +4,15 @@
 
 [低レイヤを知りたい人のためのCコンパイラ作成入門](https://www.sigbus.info/compilerbook)の演習用リポジトリ
 
-※ ステップ 15 まで実装してから C 言語から Rust に書き換えました
+- ※ Linux/x86-64 でのみ動きます
+- ※ vscode を使う場合は拡張機能 "Remote - Containers" で開発環境を整えられます
 
 ## 参考資料
 
 - [chibicc](https://github.com/rui314/chibicc/)
-  - [branch: reference](https://github.com/rui314/chibicc/commits/reference)
-  - [branch: historical/old](https://github.com/rui314/chibicc/commits/historical/old)
+  - [branch: historical/old](https://github.com/rui314/chibicc/commits/historical/old) 最初こっちのブランチ見ながら書いてました
+  - [branch: reference](https://github.com/rui314/chibicc/commits/reference) 途中からこっちのブランチ見るようになりました。
 - [std - Rust](https://doc.rust-lang.org/std/index.html)
-
-## コマンド
-
-- ※ Linux/x86-64 でのみ動きます
-- ※ vscode を使う場合は拡張機能 "Remote - Containers" で開発環境を整えられます
 
 ## 文法
 
