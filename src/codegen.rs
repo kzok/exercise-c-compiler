@@ -8,7 +8,29 @@ macro_rules! emit {
   ($($arg:tt)*) => ({print!("\t");p!($($arg)*);})
 }
 
-const ARGREG: &'static [&str] = &["rdi", "rsi", "rdx", "rcx", "r8", "r9"];
+const ARGREG1: &'static [&str] = &["dil", "sil", "dl", "cl", "r8b", "r9b"];
+const ARGREG8: &'static [&str] = &["rdi", "rsi", "rdx", "rcx", "r8", "r9"];
+
+fn load(ty: &Type) {
+    emit!("pop rax");
+    if ty.size() == 1 {
+        emit!("movsx rax, byte ptr [rax]");
+    } else {
+        emit!("mov rax, [rax]");
+    }
+    emit!("push rax");
+}
+
+fn store(ty: &Type) {
+    emit!("pop rdi");
+    emit!("pop rax");
+    if ty.size() == 1 {
+        emit!("mov [rax], dil");
+    } else {
+        emit!("mov [rax], rdi");
+    }
+    emit!("push rdi");
+}
 
 struct CodegenContext {
     label_id: u32,
@@ -117,10 +139,7 @@ impl CodegenContext {
             NodeKind::Assign { lhs, rhs } => {
                 self.gen_lvar(lhs);
                 self.gen(rhs);
-                emit!("pop rdi");
-                emit!("pop rax");
-                emit!("mov [rax], rdi");
-                emit!("push rdi");
+                store(&node.ty.as_ref().unwrap());
                 return;
             }
             NodeKind::Variable(_) => {
@@ -128,9 +147,7 @@ impl CodegenContext {
                 match &node.ty {
                     Some(Type::Array(..)) => {}
                     _ => {
-                        emit!("pop rax");
-                        emit!("mov rax, [rax]");
-                        emit!("push rax");
+                        load(&node.ty.as_ref().unwrap());
                     }
                 }
             }
@@ -206,7 +223,7 @@ impl CodegenContext {
                     self.gen(&arg);
                 }
                 for i in (0..args.len()).rev() {
-                    emit!("pop {}", ARGREG[i]);
+                    emit!("pop {}", ARGREG8[i]);
                 }
 
                 // NOTE: 関数呼び出しをする前にRSPが 16 の倍数でなければならないため
@@ -233,9 +250,7 @@ impl CodegenContext {
                 match &node.ty {
                     Some(Type::Array(..)) => {}
                     _ => {
-                        emit!("pop rax");
-                        emit!("mov rax, [rax]");
-                        emit!("push rax");
+                        load(&node.ty.as_ref().unwrap());
                     }
                 }
             }
@@ -266,7 +281,16 @@ pub fn codegen(program: &Program) {
 
         // 引数をスタックに移動
         for i in 0..function.params.len() {
-            emit!("mov [rbp-{}], {}", function.params[i].offset, ARGREG[i]);
+            let param = &function.params[i];
+            match param.ty.size() {
+                1 => {
+                    emit!("mov [rbp-{}], {}", param.offset, ARGREG1[i]);
+                }
+                s => {
+                    assert_eq!(s, 8);
+                    emit!("mov [rbp-{}], {}", param.offset, ARGREG8[i]);
+                }
+            }
         }
 
         for node in &function.nodes {

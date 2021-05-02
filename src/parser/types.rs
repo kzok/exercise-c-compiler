@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Type {
+    Char,
     Int,
     Pointer(Box<Type>),
     Array(Box<Type>, u32),
@@ -9,6 +10,7 @@ pub enum Type {
 impl Type {
     pub fn size(&self) -> u32 {
         match self {
+            Type::Char => 1,
             Type::Int | Type::Pointer(_) => 8,
             Type::Array(el, array_size) => el.size() * array_size,
         }

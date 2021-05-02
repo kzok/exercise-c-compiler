@@ -1,7 +1,7 @@
 use super::token_cursor::TokenCursor;
 use super::types::*;
+use crate::tokenizer::Keyword;
 use crate::tokenizer::Token;
-use crate::tokenizer::{Keyword, TokenKind};
 use std::rc::Rc;
 use std::vec::Vec;
 
@@ -419,7 +419,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         }
 
         // declaretion
-        if self.cursor.current().kind == TokenKind::Keyword(Keyword::Int) {
+        if self.cursor.is_typename() {
             return self.declaretion();
         }
 

@@ -5,8 +5,9 @@ pub enum Keyword {
     Else,
     While,
     For,
-    Int,
     SizeOf,
+    Char,
+    Int,
 }
 
 impl Keyword {
@@ -16,8 +17,9 @@ impl Keyword {
         ("else", Keyword::Else),
         ("while", Keyword::While),
         ("for", Keyword::For),
-        ("int", Keyword::Int),
         ("sizeof", Keyword::SizeOf),
+        ("char", Keyword::Char),
+        ("int", Keyword::Int),
     ];
 }
 
