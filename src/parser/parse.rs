@@ -79,6 +79,7 @@ impl<'a> LocalVarHolder<'a> {
             offset: self.total_variable_size() + ty.size(),
             ty,
             is_local: true,
+            content: None,
         });
         self.locals.push(var.clone());
         return var;
@@ -99,14 +100,14 @@ impl<'a> LocalVarHolder<'a> {
 }
 
 struct FunctionParser<'local, 'outer: 'local> {
-    globals: &'local Vec<Rc<Variable<'outer>>>,
+    globals: &'local mut Vec<Rc<Variable<'outer>>>,
     local_vars: LocalVarHolder<'outer>,
     cursor: &'local mut TokenCursor<'outer>,
 }
 impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     fn new(
         cursor: &'local mut TokenCursor<'outer>,
-        globals: &'local Vec<Rc<Variable<'outer>>>,
+        globals: &'local mut Vec<Rc<Variable<'outer>>>,
     ) -> FunctionParser<'local, 'outer> {
         return FunctionParser {
             local_vars: LocalVarHolder::new(),
@@ -117,12 +118,11 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
     pub fn find_var(&self, name: &str) -> Option<Rc<Variable<'outer>>> {
         return self.local_vars.find(name).or_else(|| {
-            for var in self.globals {
-                if var.name == name {
-                    return Some(var.clone());
-                }
-            }
-            return None;
+            return self
+                .globals
+                .iter()
+                .find(|&var| var.name == name)
+                .map(|var| var.clone());
         });
     }
 
@@ -203,6 +203,22 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
             self.cursor
                 .previous()
                 .report_error(&format!("未定義の変数 \"{}\" を参照しました。", name));
+        }
+        // String literal
+        if let Some(s) = self.cursor.consume_str() {
+            let mut array_size = s.len() as u32;
+            // NOTE: For string termination: '\0'
+            array_size += 1;
+            let var = Rc::new(Variable {
+                ty: Type::Array(Box::new(Type::Char), array_size),
+                // TODO: This must be unique id.
+                name: ".L.uniq.str",
+                offset: 0,
+                is_local: false,
+                content: Some(s),
+            });
+            self.globals.push(var.clone());
+            return make_node(NodeKind::Variable(var));
         }
         return make_node(NodeKind::Number(self.cursor.expect_number()));
     }
@@ -439,7 +455,7 @@ fn program<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
         let ident = cursor.expect_ident();
         // function
         if cursor.consume_sign("(") {
-            let mut ctx = FunctionParser::new(&mut cursor, &globals);
+            let mut ctx = FunctionParser::new(&mut cursor, &mut globals);
             let mut nodes = Vec::new();
 
             let params = ctx.read_func_params();
@@ -466,6 +482,7 @@ fn program<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
             offset: 0,
             ty,
             is_local: false,
+            content: None,
         }));
     }
 

@@ -66,6 +66,16 @@ impl<'a> TokenCursor<'a> {
         }
     }
 
+    pub fn consume_str(&mut self) -> Option<&'a str> {
+        match self.current().kind {
+            TokenKind::Str(s) => {
+                self.seek();
+                return Some(s);
+            }
+            _ => return None,
+        }
+    }
+
     pub fn expect_keyword(&mut self, keyword: Keyword) {
         if self.consume_keyword(keyword) {
             return;
