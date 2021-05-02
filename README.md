@@ -45,5 +45,5 @@ primary     = num
             | funcall
             | "(" expr ")"
 funcall     = ident ("(" (assign ("," assign)*)? ")")?
-basetype    = "int" "*"*
+basetype    = ("char" | "int") "*"*
 ```

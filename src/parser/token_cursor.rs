@@ -101,8 +101,13 @@ impl<'a> TokenCursor<'a> {
     }
 
     pub fn read_base_type(&mut self) -> Type {
-        self.expect_keyword(Keyword::Int);
-        let mut ty = Type::Int;
+        let mut ty = if self.consume_keyword(Keyword::Char) {
+            Type::Char
+        } else {
+            self.expect_keyword(Keyword::Int);
+            Type::Int
+        };
+
         loop {
             if !self.consume_sign("*") {
                 break;
@@ -120,5 +125,12 @@ impl<'a> TokenCursor<'a> {
         self.expect_sign("]");
         let ty = self.read_type_suffix(ty);
         return Type::Array(Box::new(ty), size);
+    }
+
+    pub fn is_typename(&mut self) -> bool {
+        return match self.current().kind {
+            TokenKind::Keyword(Keyword::Char) | TokenKind::Keyword(Keyword::Int) => true,
+            _ => false,
+        };
     }
 }

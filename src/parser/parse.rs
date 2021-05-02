@@ -1,7 +1,7 @@
 use super::token_cursor::TokenCursor;
 use super::types::*;
+use crate::tokenizer::Keyword;
 use crate::tokenizer::Token;
-use crate::tokenizer::{Keyword, TokenKind};
 use std::rc::Rc;
 use std::vec::Vec;
 
@@ -53,6 +53,10 @@ fn make_node<'a>(mut kind: NodeKind<'a>) -> Node<'a> {
     return Node { kind, ty };
 }
 
+fn align_to(n: u32, align: u32) -> u32 {
+    return (n + align - 1) & !(align - 1);
+}
+
 struct LocalVarHolder<'a> {
     locals: Vec<Rc<Variable<'a>>>,
 }
@@ -61,15 +65,18 @@ impl<'a> LocalVarHolder<'a> {
         return LocalVarHolder { locals: Vec::new() };
     }
 
+    fn total_variable_size(&self) -> u32 {
+        return self.locals.iter().fold(0, |acc, v| acc + v.ty.size());
+    }
+
     pub fn stack_size(&self) -> u32 {
-        return self.locals.iter().fold(0, |p, var| p + var.ty.size());
+        return align_to(self.total_variable_size(), 8);
     }
 
     pub fn new_var(&mut self, name: &'a str, ty: Type) -> Rc<Variable<'a>> {
-        let stack_size = self.stack_size();
         let var = Rc::new(Variable {
             name,
-            offset: stack_size + ty.size(),
+            offset: self.total_variable_size() + ty.size(),
             ty,
             is_local: true,
         });
@@ -412,7 +419,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         }
 
         // declaretion
-        if self.cursor.current().kind == TokenKind::Keyword(Keyword::Int) {
+        if self.cursor.is_typename() {
             return self.declaretion();
         }
 
