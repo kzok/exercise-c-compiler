@@ -134,6 +134,32 @@ impl<'a> TokenizerContext<'a> {
         return None;
     }
 
+    pub fn consume_string_literal(&mut self) -> Option<Token<'a>> {
+        let rest_input = self.rest_input();
+        let mut iter = rest_input.chars();
+        if iter.next().filter(|&c| c == '"').is_none() {
+            return None;
+        }
+        let mut i: usize = 1;
+        loop {
+            if let Some(c) = iter.next() {
+                if c == '"' {
+                    break;
+                }
+                i += 1;
+            } else {
+                self.report_error("文字列が閉じられていません。");
+            }
+        }
+        let token = Token {
+            kind: TokenKind::Str(&rest_input[1..i]),
+            line_of_code: &self.input,
+            index: self.index,
+        };
+        self.seek(i + 1);
+        return Some(token);
+    }
+
     pub fn report_error(&self, msg: &str) -> ! {
         let loc = self.input;
         let i = self.index + 1;
@@ -162,6 +188,10 @@ pub fn tokenize<'a>(input: &'a str) -> Vec<Token<'a>> {
             continue;
         }
         if let Some(token) = ctx.consume_ident() {
+            tokens.push(token);
+            continue;
+        }
+        if let Some(token) = ctx.consume_string_literal() {
             tokens.push(token);
             continue;
         }
@@ -260,5 +290,19 @@ mod tests {
         let mut ctx = TokenizerContext::new("ab1c+2");
         assert_eq!(ctx.consume_ident().unwrap().kind, TokenKind::Ident("ab1c"));
         assert_eq!(ctx.rest_input(), "+2");
+    }
+
+    #[test]
+    fn test_consume_string_literal() {
+        let mut ctx = TokenizerContext::new("abc");
+        assert!(ctx.consume_string_literal().is_none());
+        assert_eq!(ctx.rest_input(), "abc");
+
+        let mut ctx = TokenizerContext::new("\"abc\"");
+        assert_eq!(
+            ctx.consume_string_literal().unwrap().kind,
+            TokenKind::Str("abc")
+        );
+        assert_eq!(ctx.rest_input(), "");
     }
 }
