@@ -237,6 +237,8 @@ impl CodegenContext {
                 p!(".L.call.{}:", label_id);
                 emit!("sub rsp, 8");
                 emit!("mov rax, 0");
+                // NOTE: 浮動小数点がまだないため関数呼出前に AL に 0 をセットする
+                emit!("mov al, 0");
                 emit!("call {}", name);
                 emit!("add rsp, 8");
                 p!(".L.end.{}:", label_id);
