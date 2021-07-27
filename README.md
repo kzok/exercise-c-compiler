@@ -41,6 +41,7 @@ unary       = ("+" | "-")? primary
             | postfix
 postfix     = primary ("[" expr "]")*
 primary     = num
+            | str
             | "sizeof" unary
             | funcall
             | "(" expr ")"

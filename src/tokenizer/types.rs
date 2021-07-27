@@ -40,6 +40,7 @@ pub enum TokenKind<'a> {
     Sign(&'a str),
     Ident(&'a str),
     Keyword(Keyword),
+    Str(&'a str),
     Eof,
 }
 

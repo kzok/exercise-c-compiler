@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::string::String;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Type {
@@ -19,11 +20,13 @@ impl Type {
 
 #[derive(Debug, PartialEq)]
 pub struct Variable<'a> {
-    pub name: &'a str,
+    pub name: String,
     pub ty: Type,
     pub is_local: bool,
-    // only available on local variable
+    // local variable
     pub offset: u32,
+    // global variable
+    pub content: Option<&'a str>,
 }
 
 #[derive(Debug, PartialEq)]

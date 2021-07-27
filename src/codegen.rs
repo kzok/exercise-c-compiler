@@ -237,6 +237,8 @@ impl CodegenContext {
                 p!(".L.call.{}:", label_id);
                 emit!("sub rsp, 8");
                 emit!("mov rax, 0");
+                // NOTE: 浮動小数点がまだないため関数呼出前に AL に 0 をセットする
+                emit!("mov al, 0");
                 emit!("call {}", name);
                 emit!("add rsp, 8");
                 p!(".L.end.{}:", label_id);
@@ -266,7 +268,15 @@ pub fn codegen(program: &Program) {
     p!(".data");
     for global in &program.globals {
         p!("{}:", global.name);
-        emit!(".zero {}", global.ty.size());
+        if let Some(s) = global.content {
+            for c in s.chars() {
+                emit!(".byte {}", c as i8);
+            }
+            // NOTE: For string termination: '\0'
+            emit!(".byte 0");
+        } else {
+            emit!(".zero {}", global.ty.size());
+        }
     }
 
     p!(".text");
