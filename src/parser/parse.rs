@@ -1,12 +1,13 @@
 use super::function_parser::FunctionParser;
+use super::global_holder::GlobalHolder;
 use super::token_cursor::TokenCursor;
 use super::types::*;
 use crate::tokenizer::Token;
-use std::rc::Rc;
+use std::string::String;
 use std::vec::Vec;
 
 fn program<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
-    let mut globals: Vec<Rc<Variable>> = Vec::new();
+    let mut globals: GlobalHolder<'a> = GlobalHolder::new();
     let mut functions: Vec<Function> = Vec::new();
     let mut cursor = TokenCursor::new(&tokens);
 
@@ -21,16 +22,19 @@ fn program<'a>(tokens: &'a Vec<Token>) -> Program<'a> {
         // global-var
         let ty = cursor.read_type_suffix(ty);
         cursor.expect_sign(";");
-        globals.push(Rc::new(Variable {
-            name: ident,
+        globals.push(Variable {
+            name: String::from(ident),
             offset: 0,
             ty,
             is_local: false,
             content: None,
-        }));
+        });
     }
 
-    return Program { functions, globals };
+    return Program {
+        functions,
+        globals: globals.dump_to_vec(),
+    };
 }
 
 pub fn parse<'a>(tokens: &'a Vec<Token>) -> Program<'a> {

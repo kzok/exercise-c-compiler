@@ -1,7 +1,9 @@
+use super::global_holder::GlobalHolder;
 use super::token_cursor::TokenCursor;
 use super::types::*;
 use crate::tokenizer::Keyword;
 use std::rc::Rc;
+use std::string::String;
 use std::vec::Vec;
 
 fn detect_type(kind: &NodeKind) -> Option<Type> {
@@ -74,7 +76,7 @@ impl<'a> LocalHolder<'a> {
 
     pub fn new_var(&mut self, name: &'a str, ty: Type) -> Rc<Variable<'a>> {
         let var = Rc::new(Variable {
-            name,
+            name: String::from(name),
             offset: self.total_variable_size() + ty.size(),
             ty,
             is_local: true,
@@ -99,14 +101,14 @@ impl<'a> LocalHolder<'a> {
 }
 
 pub struct FunctionParser<'local, 'outer: 'local> {
-    globals: &'local mut Vec<Rc<Variable<'outer>>>,
+    globals: &'local mut GlobalHolder<'outer>,
     locals: LocalHolder<'outer>,
     cursor: &'local mut TokenCursor<'outer>,
 }
 impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     fn new(
         cursor: &'local mut TokenCursor<'outer>,
-        globals: &'local mut Vec<Rc<Variable<'outer>>>,
+        globals: &'local mut GlobalHolder<'outer>,
     ) -> FunctionParser<'local, 'outer> {
         return FunctionParser {
             locals: LocalHolder::new(),
@@ -117,11 +119,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
 
     fn find_var(&self, name: &str) -> Option<Rc<Variable<'outer>>> {
         return self.locals.find(name).or_else(|| {
-            return self
-                .globals
-                .iter()
-                .find(|&var| var.name == name)
-                .map(|var| var.clone());
+            return self.globals.find_var(name);
         });
     }
 
@@ -205,18 +203,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
         }
         // String literal
         if let Some(s) = self.cursor.consume_str() {
-            let mut array_size = s.len() as u32;
-            // NOTE: For string termination: '\0'
-            array_size += 1;
-            let var = Rc::new(Variable {
-                ty: Type::Array(Box::new(Type::Char), array_size),
-                // TODO: This must be unique id.
-                name: ".L.uniq.str",
-                offset: 0,
-                is_local: false,
-                content: Some(s),
-            });
-            self.globals.push(var.clone());
+            let var = self.globals.string_literal(s);
             return make_node(NodeKind::Variable(var));
         }
         return make_node(NodeKind::Number(self.cursor.expect_number()));
@@ -446,7 +433,7 @@ impl<'local, 'outer: 'local> FunctionParser<'local, 'outer> {
     pub fn parse(
         ident: &'outer str,
         cursor: &'local mut TokenCursor<'outer>,
-        globals: &'local mut Vec<Rc<Variable<'outer>>>,
+        globals: &'local mut GlobalHolder<'outer>,
     ) -> Option<Function<'outer>> {
         if !cursor.consume_sign("(") {
             return None;
